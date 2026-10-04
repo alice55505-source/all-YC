@@ -83,8 +83,8 @@
 
   function showStatus(msg, kind) {
     var el = $("status-msg");
-    if (!msg) { el.className = "status-msg no-print"; el.textContent = ""; return; }
-    el.className = "status-msg show no-print " + (kind || "ok");
+    if (!msg) { el.className = "status-msg"; el.textContent = ""; return; }
+    el.className = "status-msg show " + (kind || "ok");
     el.textContent = msg;
   }
 
@@ -786,7 +786,6 @@
     });
 
     $("download-btn").addEventListener("click", downloadExcel);
-    $("print-btn").addEventListener("click", function () { window.print(); });
   }
 
   // ---------- 啟動 ----------

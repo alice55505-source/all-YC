@@ -26,7 +26,7 @@
     </div>
   </header>
 
-  <div class="source-bar no-print">
+  <div class="source-bar">
     <div class="source-info">
       <span>資料來源：<a id="source-link" href="#" target="_blank" rel="noopener">讀取中…</a></span>
       <span class="source-time" id="source-time"></span>
@@ -36,11 +36,11 @@
       <label class="btn-secondary file-btn">上傳檔案<input type="file" id="file-input" accept=".xlsx" hidden /></label>
     </div>
   </div>
-  <div class="status-msg no-print" id="status-msg"></div>
+  <div class="status-msg" id="status-msg"></div>
 
   <div id="app-main" style="display:none;">
 
-  <section class="card no-print">
+  <section class="card">
     <h2>報表設定</h2>
     <div class="settings-grid">
       <div class="field">
@@ -93,9 +93,8 @@
       <table class="report-table" id="report-table"></table>
     </div>
     <div class="empty-hint" id="report-empty" style="display:none;">請至少勾選一個項目</div>
-    <div class="card-actions no-print">
+    <div class="card-actions">
       <button class="btn-primary" id="download-btn">下載 Excel</button>
-      <button class="btn-secondary" id="print-btn">列印 / 存 PDF</button>
     </div>
   </section>
 
