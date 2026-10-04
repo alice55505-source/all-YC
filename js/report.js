@@ -35,9 +35,30 @@
     { key: "hsSunday", label: "國高中主日", col: "AJ", group: "國高中", ratio: "hsBase", green: 1, gt: true },
     { key: "hsHome", label: "國高中家聚", col: "AK", group: "國高中", ratio: "hsBase", green: 1.3, gt: true },
     { key: "hsGroup", label: "國高中排聚", col: "AL", group: "國高中", ratio: "hsBase", green: 1.1, gt: true },
+    // 以下細分欄位只在「數據輸入區」（AY 欄是小區名稱），用名稱對應
+    { key: "jhSunday", label: "國中主日", col: "CA", input: true, group: "國中" },
+    { key: "jhHomeOut", label: "國中家聚出訪", col: "CB", input: true, group: "國中" },
+    { key: "jhHomeIn", label: "國中家聚受訪", col: "CC", input: true, group: "國中" },
+    { key: "jhHome", label: "國中家聚", group: "國中", sumOf: ["jhHomeOut", "jhHomeIn"], note: "出訪＋受訪" },
+    { key: "jhGroup", label: "國中排聚", col: "CD", input: true, group: "國中" },
+    { key: "shSunday", label: "高中主日", col: "CE", input: true, group: "高中" },
+    { key: "shHomeOut", label: "高中家聚出訪", col: "CF", input: true, group: "高中" },
+    { key: "shHomeIn", label: "高中家聚受訪", col: "CG", input: true, group: "高中" },
+    { key: "shHome", label: "高中家聚", group: "高中", sumOf: ["shHomeOut", "shHomeIn"], note: "出訪＋受訪" },
+    { key: "shGroup", label: "高中排聚", col: "CH", input: true, group: "高中" },
+
     { key: "drCount", label: "得少人數", col: "AM", group: "得少" },
+    { key: "drCountEs", label: "得少人數・小學", col: "CI", input: true, group: "得少" },
+    { key: "drCountJh", label: "得少人數・國中", col: "CJ", input: true, group: "得少" },
+    { key: "drCountSh", label: "得少人數・高中", col: "CK", input: true, group: "得少" },
     { key: "drSunday", label: "得少主日", col: "AN", group: "得少" },
-    { key: "drHome", label: "得少家聚", col: "AO", group: "得少" },
+    { key: "drSundayEs", label: "得少主日・小學", col: "CL", input: true, group: "得少" },
+    { key: "drSundayJh", label: "得少主日・國中", col: "CM", input: true, group: "得少" },
+    { key: "drSundaySh", label: "得少主日・高中", col: "CN", input: true, group: "得少" },
+    { key: "drHome", label: "得少受訪", col: "AO", group: "得少" },
+    { key: "drHomeEs", label: "得少受訪・小學", col: "CO", input: true, group: "得少" },
+    { key: "drHomeJh", label: "得少受訪・國中", col: "CP", input: true, group: "得少" },
+    { key: "drHomeSh", label: "得少受訪・高中", col: "CQ", input: true, group: "得少" },
 
     { key: "chRoster", label: "兒童名冊", col: "AP", group: "兒童", agg: "last" },
     { key: "chBase", label: "兒童基數", col: "AQ", group: "兒童", agg: "last" },
@@ -63,6 +84,7 @@
     return n - 1;
   }
   RAW_FIELDS.forEach(function (f) { f.c = colIndex(f.col); });
+  var INPUT_NAME_COL = colIndex("AY");
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
@@ -132,6 +154,11 @@
     var range = ws["!ref"] ? decodeRange(ws["!ref"]) : { e: { r: 60 } };
     var units = [];
     var region = "";
+    var inputRow = {};
+    for (var ir = 4; ir <= Math.min(range.e.r, 200); ir++) {
+      var n = textOf(cellAt(ws, ir, INPUT_NAME_COL));
+      if (n && inputRow[n] === undefined) inputRow[n] = ir;
+    }
     for (var r = 4; r <= Math.min(range.e.r, 200); r++) {
       var a = textOf(cellAt(ws, r, 0));
       if (a.indexOf("總計") >= 0) break;
@@ -139,7 +166,10 @@
       var name = textOf(cellAt(ws, r, 1));
       if (!name || name === "小計") continue;
       var values = {};
-      RAW_FIELDS.forEach(function (f) { values[f.key] = numOf(cellAt(ws, r, f.c)); });
+      RAW_FIELDS.forEach(function (f) {
+        var row = f.input ? inputRow[name] : r;
+        values[f.key] = row === undefined ? null : numOf(cellAt(ws, row, f.c));
+      });
       units.push({ region: region, name: name, values: values });
     }
     var sundaySum = 0;

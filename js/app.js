@@ -16,7 +16,7 @@
     },
     {
       name: "青年人月報",
-      fields: ["ypBase", "ypSunday", "ypHome", "ypGroup", "csBase", "csSunday", "csHome", "csGroup", "hsBase", "hsSunday", "hsHome", "hsGroup", "drSunday", "drHome"]
+      fields: ["ypBase", "ypSunday", "ypHome", "ypGroup", "csBase", "csSunday", "csHome", "csGroup", "hsBase", "hsSunday", "hsHome", "hsGroup", "drCount", "drSunday", "drHome"]
     },
     {
       name: "兒童月報",
