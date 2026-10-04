@@ -560,7 +560,10 @@
       r.cells.forEach(function (c, i) {
         var text = c.kind === "ratio" ? fmtPct(c.value) : c.kind === "delta" ? fmtDelta(c.value) : fmtNum(c.value, c.field);
         var cl = [];
-        if (c.kind === "delta" && c.value != null) cl.push(c.value > 0 ? "up" : c.value < 0 ? "down" : "");
+        if (c.kind === "delta" && c.value != null) {
+          var shown = Math.round(c.value * 10) / 10;
+          cl.push(shown > 0 ? "up" : shown < 0 ? "down" : "");
+        }
         if (c.kind !== "value") cl.push("sub");
         var col = built.cols[i];
         var next = built.cols[i + 1];

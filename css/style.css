@@ -880,5 +880,5 @@ table.matrix td.na { color: var(--border); }
 .chip-sub { margin-left: 0.35rem; font-size: 0.72rem; font-weight: 400; opacity: 0.75; }
 .report-table td.field-end { border-right: 1px solid var(--border); }
 .report-table td.month-end { border-right: 2px solid var(--text-muted); }
-.report-table th.month-th { color: var(--accent); font-size: 0.95rem; text-align: left; padding-left: 0.6rem; border-left: 2px solid var(--text-muted); }
+.report-table th.month-th { color: var(--accent); font-size: 0.95rem; text-align: center; border-left: 2px solid var(--text-muted); }
 @media print { .report-table td.field-end, .report-table td.month-end { border-right: 1px solid #bbb; } }
