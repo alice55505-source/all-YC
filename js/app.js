@@ -48,6 +48,7 @@
   // ---------- 範本儲存：優先存雲端共用（/api/presets），伺服器沒設定資料庫時退回這台裝置 ----------
   var presets = [];
   var presetsShared = false;
+  var presetsLoaded = false;  // 雲端範本讀回來之前，不要因為找不到就清掉目前選的範本
 
   function userPresets() { return presets; }
 
@@ -93,8 +94,12 @@
       presetsShared = false;
       presets = localPresets();
     }).then(function () {
+      presetsLoaded = true;
       setPresetNote();
       renderPresetSelect();
+      // 鎖定中的範本若被別人更新，畫面跟著換成最新的範本內容
+      var p = currentPreset();
+      if (p && !editingPreset) applyPreset(p);
     });
   }
 
@@ -285,7 +290,7 @@
 
   function renderPresetSelect() {
     var mine = userPresets();
-    if (settings.preset && !findPreset(settings.preset)) settings.preset = "";
+    if (presetsLoaded && settings.preset && !findPreset(settings.preset)) settings.preset = "";
     var html = '<option value="">' + (mine.length ? "— 選擇範本 —" : "— 還沒有範本 —") + "</option>";
     mine.forEach(function (p) {
       html += '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + "</option>";
@@ -296,15 +301,31 @@
     renderPresetState();
   }
 
-  // 目前設定跟選取的範本不同時提示「尚未存入」
+  // 選了範本就鎖定：項目、順序、顯示選項都不能動，要先按「修改範本」；
+  // 修改後按「儲存更新」才寫回範本，「取消修改」則還原成範本的設定。
+  var editingPreset = false;
+
+  function currentPreset() { return settings.preset ? findPreset(settings.preset) : null; }
+
+  function isLocked() { return !!currentPreset() && !editingPreset; }
+
   function renderPresetState() {
-    var p = settings.preset ? findPreset(settings.preset) : null;
+    var p = currentPreset();
+    if (!p) editingPreset = false;
+    var locked = isLocked();
     $("preset-actions").hidden = !p;
-    if (!p) return;
-    var cur = presetSnapshot();
-    var dirty = PRESET_KEYS.some(function (k) { return JSON.stringify(cur[k]) !== JSON.stringify(p[k]); });
-    $("preset-dirty").hidden = !dirty;
-    $("preset-update-btn").hidden = !dirty;
+    $("preset-lock").hidden = !locked;
+    $("preset-edit-btn").hidden = !locked;
+    $("preset-update-btn").hidden = locked;
+    $("preset-cancel-btn").hidden = locked;
+    $("preset-rename-btn").hidden = !locked;
+    $("preset-delete-btn").hidden = !locked;
+    $("preset-dirty").hidden = locked;
+    $("picker-toggle").hidden = locked;
+    $("drag-hint").hidden = locked;
+    if (locked) $("field-picker").hidden = true;
+    $("picked-chips").classList.toggle("locked", locked);
+    document.querySelectorAll("input[data-setting]").forEach(function (el) { el.disabled = locked; });
   }
 
   function applyPreset(p) {
@@ -313,6 +334,7 @@
       if (p[k] !== undefined) settings[k] = p[k];
     });
     settings.preset = p.name;
+    editingPreset = false;
     saveSettings();
     syncControls();
     renderAll();
@@ -739,7 +761,7 @@
 
     box.addEventListener("pointerdown", function (e) {
       var chip = e.target.closest(".picked-chip");
-      if (!chip || e.target.closest("button") || e.button > 0) return;
+      if (!chip || e.target.closest("button") || e.button > 0 || isLocked()) return;
       drag = { chip: chip, x: e.clientX, y: e.clientY, started: false, ghost: null, id: e.pointerId };
       chip.setPointerCapture(e.pointerId);
     });
@@ -807,6 +829,7 @@
 
     document.querySelectorAll("input[data-setting]").forEach(function (el) {
       el.addEventListener("change", function () {
+        if (isLocked()) { el.checked = !!settings[el.getAttribute("data-setting")]; return; }
         settings[el.getAttribute("data-setting")] = el.checked;
         saveSettings();
         renderAll();
@@ -822,7 +845,7 @@
       var btn = e.target.closest("button");
       if (!btn) return;
       var key = btn.getAttribute("data-remove");
-      if (!key) return;
+      if (!key || isLocked()) return;
       settings.fields = settings.fields.filter(function (k) { return k !== key; });
       fieldsChanged();
     });
@@ -853,6 +876,11 @@
     });
 
     $("preset-select").addEventListener("change", function (e) {
+      if (editingPreset && !confirm("目前的修改還沒儲存，要放棄修改並切換範本嗎？")) {
+        e.target.value = settings.preset;
+        return;
+      }
+      editingPreset = false;
       var p = findPreset(e.target.value);
       if (p) {
         applyPreset(p);
@@ -867,14 +895,25 @@
       if (!name) return;
       if (findPreset(name) && !confirm("已有範本「" + name + "」，要覆蓋嗎？")) return;
       settings.preset = name;
+      editingPreset = false;
       saveSettings();
       presetSave(name, presetSnapshot()).then(function () {
         showStatus("已存成範本「" + name + "」" + (presetsShared ? "（所有人共用）" : "（存在這台裝置）"), "ok");
       }, presetError);
     });
+    $("preset-edit-btn").addEventListener("click", function () {
+      editingPreset = true;
+      renderPresetState();
+    });
+    $("preset-cancel-btn").addEventListener("click", function () {
+      var p = currentPreset();
+      if (p) applyPreset(p);
+    });
     $("preset-update-btn").addEventListener("click", function () {
       var name = settings.preset;
       presetSave(name, presetSnapshot()).then(function () {
+        editingPreset = false;
+        renderPresetState();
         showStatus("已更新範本「" + name + "」", "ok");
       }, presetError);
     });

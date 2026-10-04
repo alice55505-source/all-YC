@@ -874,3 +874,13 @@ table.matrix td.na { color: var(--border); }
 .report-table td.month-end, .report-table th.month-end { border-right: 2px solid var(--text-muted); }
 
 .preset-note { margin: 0.35rem 0 0; font-size: 0.78rem; color: var(--text-muted); }
+
+/* 範本鎖定 */
+.small-btn { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+.preset-actions button[hidden], .preset-lock[hidden] { display: none; }
+.preset-lock { color: var(--text-muted); }
+#picked-chips.locked .picked-chip { cursor: default; touch-action: auto; padding-right: 0.65rem; }
+#picked-chips.locked .picked-chip button, #picked-chips.locked .drag-handle { display: none; }
+#picker-toggle[hidden] { display: none; }
+input[data-setting]:disabled + * , .check:has(input:disabled) { opacity: 0.6; }
+#drag-hint[hidden] { display: none; }

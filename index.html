@@ -58,8 +58,11 @@
           <button class="btn-secondary" id="preset-save-btn" title="把目前的設定存成新範本">存成新範本</button>
         </div>
         <div class="preset-actions" id="preset-actions" hidden>
-          <span class="preset-dirty" id="preset-dirty" hidden>設定已變更，尚未存入範本</span>
-          <button class="link-btn" id="preset-update-btn">用目前設定更新此範本</button>
+          <span class="preset-lock" id="preset-lock">🔒 範本已鎖定，要改項目請按「修改範本」</span>
+          <span class="preset-dirty" id="preset-dirty" hidden>修改中，按「儲存更新」才會存入範本</span>
+          <button class="btn-secondary small-btn" id="preset-edit-btn">修改範本</button>
+          <button class="btn-primary small-btn" id="preset-update-btn">儲存更新</button>
+          <button class="btn-secondary small-btn" id="preset-cancel-btn">取消修改</button>
           <button class="link-btn" id="preset-rename-btn">改名</button>
           <button class="link-btn danger" id="preset-delete-btn">刪除</button>
         </div>
@@ -76,7 +79,7 @@
     </div>
 
     <div class="field">
-      <label>項目 <span class="field-hint" id="picked-count"></span><span class="field-hint">・按住拖曳可調整順序</span></label>
+      <label>項目 <span class="field-hint" id="picked-count"></span><span class="field-hint" id="drag-hint">・按住拖曳可調整順序</span></label>
       <div class="picked-bar">
         <div class="chip-grid" id="picked-chips"></div>
         <div class="picked-tools">
