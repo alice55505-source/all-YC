@@ -330,13 +330,6 @@
     return field.gt ? ratio > field.green + 1e-9 : ratio >= field.green - 1e-9;
   }
 
-  // 單週加總（週明細用）
-  function weekTotals(week) {
-    var v = sumValues(week.units.map(function (u) { return u.values; }));
-    finishDerived(v, null);
-    return { values: v, ratios: ratiosOf(v) };
-  }
-
   var api = {
     FIELDS: FIELDS,
     FIELD_BY_KEY: FIELD_BY_KEY,
@@ -347,7 +340,6 @@
     monthsWithData: monthsWithData,
     prevMonthKey: prevMonthKey,
     computeMonth: computeMonth,
-    weekTotals: weekTotals,
     isGreen: isGreen
   };
 

@@ -30,8 +30,7 @@
     showRatio: true,
     compare: false,
     highlight: true,
-    fields: BUILTIN_PRESETS[0].fields.slice(),
-    trendScope: "total"
+    fields: BUILTIN_PRESETS[0].fields.slice()
   };
 
   var weeks = [];
@@ -133,7 +132,6 @@
     if (!currentMonth || keys.indexOf(currentMonth) < 0) currentMonth = keys[keys.length - 1];
     $("app-main").style.display = "";
     renderMonthSelect();
-    renderTrendScope();
     renderAll();
   }
 
@@ -408,87 +406,9 @@
     XLSX.writeFile(wb, "雲嘉月報表_" + currentMonth + ".xlsx");
   }
 
-  // ---------- 月趨勢 ----------
-  function renderTrendScope() {
-    var order = R.unitOrder(weeks);
-    var html = '<option value="total">' + R.TOTAL_NAME + "</option>";
-    html += '<optgroup label="大區">';
-    order.forEach(function (g) { html += '<option value="region:' + escapeHtml(g.region) + '">' + escapeHtml(g.region) + "</option>"; });
-    html += "</optgroup>";
-    order.forEach(function (g) {
-      html += '<optgroup label="' + escapeHtml(g.region) + '">';
-      g.units.forEach(function (u) { html += '<option value="unit:' + escapeHtml(u) + '">' + escapeHtml(u) + "</option>"; });
-      html += "</optgroup>";
-    });
-    var sel = $("trend-scope");
-    sel.innerHTML = html;
-    sel.value = settings.trendScope;
-    if (sel.value !== settings.trendScope) { sel.value = "total"; settings.trendScope = "total"; }
-  }
-
-  function pickRow(report, scope) {
-    var parts = scope.split(":");
-    var type = parts[0];
-    var name = parts.slice(1).join(":");
-    for (var i = 0; i < report.rows.length; i++) {
-      var r = report.rows[i];
-      if (type === "total" && r.type === "total") return r;
-      if (type === "region" && r.type === "region" && r.region === name) return r;
-      if (type === "unit" && r.type === "unit" && r.name === name) return r;
-    }
-    return null;
-  }
-
-  function renderTrend() {
-    var fields = selectedFields();
-    var table = $("trend-table");
-    if (!fields.length) { table.innerHTML = ""; return; }
-    var head = "<thead><tr><th>月份</th>" + fields.map(function (f) { return "<th>" + escapeHtml(f.label) + "</th>"; }).join("") + "</tr></thead>";
-    var body = months.map(function (m) {
-      var rep = R.computeMonth(weeks, m.month, settings.mode);
-      var row = pickRow(rep, settings.trendScope);
-      var cls = m.month === currentMonth ? ' class="current-row"' : "";
-      var html = "<tr" + cls + "><td>" + monthLabel(m.month) + "</td>";
-      fields.forEach(function (f) {
-        var v = row ? row.values[f.key] : null;
-        var ratio = row && f.ratio ? row.ratios[f.key] : null;
-        var green = settings.highlight && R.isGreen(f, ratio);
-        html += '<td class="' + (green ? "ok" : "") + '">' + fmtNum(v, f) +
-          (settings.showRatio && f.ratio ? '<span class="cell-sub">' + fmtPct(ratio) + "</span>" : "") + "</td>";
-      });
-      return html + "</tr>";
-    }).join("");
-    table.innerHTML = head + "<tbody>" + body + "</tbody>";
-  }
-
-  // ---------- 週明細 ----------
-  function renderWeeks() {
-    var fields = selectedFields().filter(function (f) { return !f.monthDiffOf; });
-    var table = $("week-table");
-    var mweeks = weeks.filter(function (w) { return w.month === currentMonth && w.hasData; });
-    if (!fields.length || !mweeks.length) { table.innerHTML = ""; return; }
-    var head = "<thead><tr><th>主日</th>" + fields.map(function (f) { return "<th>" + escapeHtml(f.label) + "</th>"; }).join("") + "</tr></thead>";
-    var body = mweeks.map(function (w) {
-      var t = R.weekTotals(w);
-      var missing = w.units.filter(function (u) { return u.values.sunday == null; }).map(function (u) { return u.name; });
-      var html = "<tr><td>" + md(w.date) + '<span class="cell-sub">' + md(addDays(w.date, -6)) + "～" + md(w.date) +
-        (missing.length ? "・缺 " + escapeHtml(missing.join("、")) : "") + "</span></td>";
-      fields.forEach(function (f) {
-        var ratio = f.ratio ? t.ratios[f.key] : null;
-        var green = settings.highlight && R.isGreen(f, ratio);
-        html += '<td class="' + (green ? "ok" : "") + '">' + fmtNum(t.values[f.key], f) +
-          (settings.showRatio && f.ratio ? '<span class="cell-sub">' + fmtPct(ratio) + "</span>" : "") + "</td>";
-      });
-      return html + "</tr>";
-    }).join("");
-    table.innerHTML = head + "<tbody>" + body + "</tbody>";
-  }
-
   function renderAll() {
     if (!weeks.length || !currentMonth) return;
     renderReport();
-    renderTrend();
-    renderWeeks();
   }
 
   // ---------- 事件 ----------
@@ -499,11 +419,6 @@
       e.target.value = "";
     });
     $("month-select").addEventListener("change", function (e) { currentMonth = e.target.value; renderAll(); });
-    $("trend-scope").addEventListener("change", function (e) {
-      settings.trendScope = e.target.value;
-      saveSettings();
-      renderTrend();
-    });
 
     document.querySelectorAll(".seg button").forEach(function (b) {
       b.addEventListener("click", function () {
