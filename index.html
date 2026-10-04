@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>雲嘉月報表系統</title>
+<meta name="description" content="自動抓取雲嘉眾召會每週人數報表，依主日日期彙整成月報表" />
+<meta name="theme-color" content="#2563eb" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="雲嘉月報" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/icon-192.png" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<div class="wrap">
+  <header class="app-header">
+    <div class="app-header-row">
+      <div>
+        <h1>雲嘉月報表系統</h1>
+        <p>自動抓取每週人數報表，依主日日期歸月，自選項目產生月報表。</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="source-bar no-print">
+    <div class="source-info">
+      <span>資料來源：<a id="source-link" href="#" target="_blank" rel="noopener">讀取中…</a></span>
+      <span class="source-time" id="source-time"></span>
+    </div>
+    <div class="source-actions">
+      <button class="btn-secondary" id="refresh-btn">重新抓取</button>
+      <label class="btn-secondary file-btn">上傳檔案<input type="file" id="file-input" accept=".xlsx" hidden /></label>
+    </div>
+  </div>
+  <div class="status-msg no-print" id="status-msg"></div>
+
+  <div id="app-main" style="display:none;">
+
+  <section class="card no-print">
+    <h2>報表設定</h2>
+    <div class="settings-grid">
+      <div class="field">
+        <label for="month-select">月份</label>
+        <select id="month-select"></select>
+      </div>
+      <div class="field">
+        <label for="preset-select">範本</label>
+        <div class="inline-row">
+          <select id="preset-select"></select>
+          <button class="btn-secondary" id="preset-save-btn" title="把目前的設定存成範本">存成範本</button>
+          <button class="btn-danger-ghost" id="preset-delete-btn" title="刪除這個範本">刪除</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-grid">
+      <div class="field">
+        <label>統計方式</label>
+        <div class="seg" data-setting="mode">
+          <button data-value="avg">週平均</button>
+          <button data-value="sum">合計</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>顯示層級</label>
+        <div class="seg" data-setting="level">
+          <button data-value="unit">小區明細</button>
+          <button data-value="region">大區</button>
+          <button data-value="total">只看總計</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>顯示選項</label>
+      <div class="check-row">
+        <label class="check"><input type="checkbox" data-setting="showRatio" /> 佔比</label>
+        <label class="check"><input type="checkbox" data-setting="compare" /> 較上月增減</label>
+        <label class="check"><input type="checkbox" data-setting="highlight" /> 達標綠色標示</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>項目 <span class="field-hint">勾選要放進月報表的欄位</span></label>
+      <div id="field-picker"></div>
+    </div>
+  </section>
+
+  <section class="card report-card">
+    <h2><span id="report-title">月報表</span> <span class="badge" id="report-badge"></span></h2>
+    <p class="report-sub" id="report-sub"></p>
+    <div class="table-scroll">
+      <table class="report-table" id="report-table"></table>
+    </div>
+    <div class="empty-hint" id="report-empty" style="display:none;">請至少勾選一個項目</div>
+    <div class="card-actions no-print">
+      <button class="btn-primary" id="download-btn">下載 Excel</button>
+      <button class="btn-secondary" id="print-btn">列印 / 存 PDF</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>月趨勢 <span class="badge">各月比較</span></h2>
+    <div class="field no-print">
+      <label for="trend-scope">範圍</label>
+      <select id="trend-scope"></select>
+    </div>
+    <div class="table-scroll">
+      <table id="trend-table"></table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>本月週明細 <span class="badge">雲嘉總計・每週數字</span></h2>
+    <div class="table-scroll">
+      <table id="week-table"></table>
+    </div>
+  </section>
+
+  <footer class="app-footer">
+    週報分頁名稱是主日日期（例如 1004 = 10/4 主日，涵蓋 9/28～10/4），月份依主日日期歸屬。
+    週平均只計算有填資料的週；某小區有缺週時，數字旁會標示實際回報週數。
+    基數、名冊、受浸目標與累計取當月最後一週；本月受浸 = 本月底累計 − 上月底累計。
+  </footer>
+
+  </div>
+</div>
+
+<script src="js/xlsx.core.min.js"></script>
+<script src="js/report.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
