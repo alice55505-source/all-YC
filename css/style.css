@@ -844,12 +844,18 @@ table.matrix td.na { color: var(--border); }
 .picked-tools button { white-space: nowrap; padding: 0.45rem 0.8rem; font-size: 0.85rem; }
 .picked-tools button[hidden] { display: none; }
 
-.picked-chips.ordering .picked-chip, #picked-chips.ordering .picked-chip {
-  padding: 0.2rem 0.2rem;
-  background: var(--surface-2);
-  border: 1px dashed var(--accent);
+/* 拖曳排序 */
+.picked-chip { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.drag-handle { margin-right: 0.3rem; opacity: 0.45; font-size: 0.8rem; }
+.picked-chip.drag-source { opacity: 0.3; }
+.drag-ghost {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(16, 24, 40, 0.25);
+  cursor: grabbing;
+  box-sizing: border-box;
 }
-.picked-chip button:disabled { opacity: 0.2; }
 
 .chip-sub { margin-left: 0.35rem; font-size: 0.72rem; font-weight: 400; opacity: 0.75; }
 /* 月報表：完整格線，月份之間加粗 */

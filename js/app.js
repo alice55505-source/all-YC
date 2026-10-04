@@ -333,7 +333,6 @@
     }
   ];
   var pickerTab = 0;
-  var ordering = false;
 
   function tabKeys(tab) {
     if (tab.chips) return tab.chips.map(function (c) { return c[0]; });
@@ -383,17 +382,9 @@
   function renderPicked() {
     var fields = selectedFields();
     $("picked-count").textContent = fields.length ? "已選 " + fields.length + " 項" : "尚未選擇";
-    $("picked-chips").classList.toggle("ordering", ordering);
-    $("order-toggle").textContent = ordering ? "完成排序" : "調整順序";
-    $("order-toggle").hidden = fields.length < 2 && !ordering;
-    $("picked-chips").innerHTML = fields.map(function (f, i) {
+    $("picked-chips").innerHTML = fields.map(function (f) {
       var label = escapeHtml(f.label);
-      if (ordering) {
-        return '<span class="picked-chip">' +
-          '<button data-move="' + i + '" data-dir="-1"' + (i === 0 ? " disabled" : "") + ' aria-label="往前">‹</button>' + label +
-          '<button data-move="' + i + '" data-dir="1"' + (i === fields.length - 1 ? " disabled" : "") + ' aria-label="往後">›</button></span>';
-      }
-      return '<span class="picked-chip">' + label +
+      return '<span class="picked-chip" data-key="' + f.key + '"><span class="drag-handle" aria-hidden="true">⠿</span>' + label +
         '<button data-remove="' + f.key + '" title="移除" aria-label="移除 ' + label + '">×</button></span>';
     }).join("");
   }
@@ -718,6 +709,61 @@
     renderReport();
   }
 
+  // ---------- 拖曳排序已選項目（滑鼠、觸控都適用） ----------
+  function bindChipDrag() {
+    var box = $("picked-chips");
+    var drag = null;
+
+    box.addEventListener("pointerdown", function (e) {
+      var chip = e.target.closest(".picked-chip");
+      if (!chip || e.target.closest("button") || e.button > 0) return;
+      drag = { chip: chip, x: e.clientX, y: e.clientY, started: false, ghost: null, id: e.pointerId };
+      chip.setPointerCapture(e.pointerId);
+    });
+
+    box.addEventListener("pointermove", function (e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      if (!drag.started) {
+        if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) < 6) return;
+        drag.started = true;
+        var r = drag.chip.getBoundingClientRect();
+        drag.dx = drag.x - r.left;
+        drag.dy = drag.y - r.top;
+        drag.ghost = drag.chip.cloneNode(true);
+        drag.ghost.classList.add("drag-ghost");
+        drag.ghost.style.width = r.width + "px";
+        document.body.appendChild(drag.ghost);
+        drag.chip.classList.add("drag-source");
+      }
+      e.preventDefault();
+      drag.ghost.style.left = (e.clientX - drag.dx) + "px";
+      drag.ghost.style.top = (e.clientY - drag.dy) + "px";
+      var under = document.elementFromPoint(e.clientX, e.clientY);
+      var target = under && under.closest ? under.closest(".picked-chip") : null;
+      if (!target || target === drag.chip || target.parentNode !== box) return;
+      var tr = target.getBoundingClientRect();
+      var after = e.clientX > tr.left + tr.width / 2;
+      box.insertBefore(drag.chip, after ? target.nextSibling : target);
+    });
+
+    function finish(e) {
+      if (!drag || e.pointerId !== drag.id) return;
+      var d = drag;
+      drag = null;
+      if (!d.started) return;
+      d.ghost.remove();
+      d.chip.classList.remove("drag-source");
+      var order = Array.prototype.map.call(box.querySelectorAll(".picked-chip"), function (c) {
+        return c.getAttribute("data-key");
+      });
+      if (order.join(",") === selectedFields().map(function (f) { return f.key; }).join(",")) return;
+      settings.fields = order;
+      fieldsChanged();
+    }
+    box.addEventListener("pointerup", finish);
+    box.addEventListener("pointercancel", finish);
+  }
+
   // ---------- 事件 ----------
   function bindEvents() {
     $("refresh-btn").addEventListener("click", function () { fetchSheet(true); });
@@ -745,28 +791,15 @@
       panel.hidden = !panel.hidden;
       $("picker-toggle").textContent = panel.hidden ? "＋ 編輯項目" : "完成";
     });
-    $("order-toggle").addEventListener("click", function () {
-      ordering = !ordering;
-      renderPicked();
-    });
     $("picked-chips").addEventListener("click", function (e) {
       var btn = e.target.closest("button");
       if (!btn) return;
       var key = btn.getAttribute("data-remove");
-      if (key) {
-        settings.fields = settings.fields.filter(function (k) { return k !== key; });
-      } else if (btn.hasAttribute("data-move")) {
-        var list = selectedFields().map(function (f) { return f.key; });
-        var i = +btn.getAttribute("data-move");
-        var j = i + +btn.getAttribute("data-dir");
-        if (j < 0 || j >= list.length) return;
-        var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
-        settings.fields = list;
-      } else {
-        return;
-      }
+      if (!key) return;
+      settings.fields = settings.fields.filter(function (k) { return k !== key; });
       fieldsChanged();
     });
+    bindChipDrag();
     $("field-picker").addEventListener("change", function (e) {
       var key = e.target.getAttribute("data-field");
       if (!key) return;
