@@ -16,7 +16,9 @@
     preset: ""
   };
 
-  var weeks = [];
+  var allWeeks = [];
+  var weeks = [];      // 套用「統計到」之後實際計算用的週
+  var cutoff = "";     // 統計到哪個主日（YYYY-MM-DD）；空字串 = 最新一週
   var months = [];
   var selectedMonths = [];
   var settings = loadJson(SETTINGS_KEY, null) || {};
@@ -184,7 +186,16 @@
   }
 
   function useWeeks(newWeeks) {
-    weeks = newWeeks;
+    allWeeks = newWeeks;
+    applyCutoff();
+  }
+
+  // 只計算到選定的主日為止（含），之後的週全部不算
+  function applyCutoff() {
+    var dates = allWeeks.filter(function (w) { return w.hasData; }).map(function (w) { return w.date; });
+    if (cutoff && dates.indexOf(cutoff) < 0) cutoff = "";
+    weeks = cutoff ? allWeeks.filter(function (w) { return w.date <= cutoff; }) : allWeeks;
+    renderCutoffSelect(dates);
     months = R.monthsWithData(weeks);
     if (!months.length) {
       $("app-main").style.display = "none";
@@ -237,6 +248,17 @@
   }
 
   // ---------- 設定區 ----------
+  function renderCutoffSelect(dates) {
+    var latest = dates[dates.length - 1];
+    var html = latest ? '<option value="">最新一週（' + md(latest) + " 主日）</option>" : "";
+    dates.slice().reverse().forEach(function (d) {
+      html += '<option value="' + d + '">' + md(d) + " 主日（" + md(addDays(d, -6)) + "～" + md(d) + "）</option>";
+    });
+    var sel = $("cutoff-select");
+    sel.innerHTML = html;
+    sel.value = cutoff;
+  }
+
   // 月份可多選；多選時同一張表並排比較
   function renderMonthSelect() {
     $("month-picker").innerHTML = months.map(function (m) {
@@ -634,6 +656,7 @@
     $("report-title").textContent = titleMonths() + " 雲嘉眾召會月報表";
     $("report-badge").textContent = "週平均";
     $("report-sub").textContent = weeksText(built) +
+      (cutoff ? "　※ 統計到 " + md(cutoff) + " 主日" : "") +
       (settings.compare && built.missingPrev ? "　※ 前一個月沒有資料的月份無法比較增減" : "");
 
     var table = $("report-table");
@@ -767,6 +790,10 @@
   // ---------- 事件 ----------
   function bindEvents() {
     $("refresh-btn").addEventListener("click", function () { fetchSheet(true); });
+    $("cutoff-select").addEventListener("change", function (e) {
+      cutoff = e.target.value;
+      applyCutoff();
+    });
     $("month-picker").addEventListener("change", function (e) {
       var m = e.target.getAttribute("data-month");
       if (!m) return;
