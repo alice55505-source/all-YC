@@ -43,7 +43,92 @@
 
   function saveSettings() { saveJson(SETTINGS_KEY, settings); }
 
-  function userPresets() { return loadJson(PRESETS_KEY, []) || []; }
+  // ---------- 範本儲存：優先存雲端共用（/api/presets），伺服器沒設定資料庫時退回這台裝置 ----------
+  var presets = [];
+  var presetsShared = false;
+
+  function userPresets() { return presets; }
+
+  function localPresets() { return loadJson(PRESETS_KEY, []) || []; }
+
+  function presetApi(method, name, body) {
+    var url = "/api/presets" + (name != null ? "/" + encodeURIComponent(name) : "");
+    var opts = { method: method, cache: "no-store" };
+    if (body) {
+      opts.headers = { "Content-Type": "application/json" };
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(url, opts).then(function (res) {
+      return res.json().catch(function () { return {}; }).then(function (j) {
+        if (!res.ok) throw new Error(j.error || "伺服器回應 HTTP " + res.status);
+        return j;
+      });
+    });
+  }
+
+  function setPresetNote() {
+    $("preset-note").textContent = presetsShared
+      ? "範本存在雲端，所有使用者共用"
+      : "共用範本尚未啟用，範本只存在這台裝置";
+  }
+
+  // 讀取共用範本；這台裝置以前存的範本若雲端沒有，自動上傳後清掉本機的
+  function loadPresets() {
+    return presetApi("GET").then(function (j) {
+      presets = j.presets || [];
+      presetsShared = true;
+      var names = presets.map(function (p) { return p.name; });
+      var pending = localPresets().filter(function (p) { return p && p.name && names.indexOf(p.name) < 0; });
+      if (!pending.length) {
+        try { localStorage.removeItem(PRESETS_KEY); } catch (e) { /* 忽略 */ }
+        return;
+      }
+      return Promise.all(pending.map(function (p) { return presetApi("PUT", p.name, p); })).then(function () {
+        try { localStorage.removeItem(PRESETS_KEY); } catch (e) { /* 忽略 */ }
+        return presetApi("GET").then(function (j2) { presets = j2.presets || []; });
+      });
+    }).catch(function () {
+      presetsShared = false;
+      presets = localPresets();
+    }).then(function () {
+      setPresetNote();
+      renderPresetSelect();
+    });
+  }
+
+  function presetSave(name, snap) {
+    if (!presetsShared) {
+      var list = localPresets().filter(function (p) { return p.name !== name; });
+      snap.name = name;
+      list.push(snap);
+      saveJson(PRESETS_KEY, list);
+      return loadPresets();
+    }
+    return presetApi("PUT", name, snap).then(loadPresets);
+  }
+
+  function presetRename(oldName, newName) {
+    if (!presetsShared) {
+      saveJson(PRESETS_KEY, localPresets().map(function (p) {
+        if (p.name === oldName) p.name = newName;
+        return p;
+      }));
+      return loadPresets();
+    }
+    return presetApi("PATCH", oldName, { newName: newName }).then(loadPresets);
+  }
+
+  function presetDelete(name) {
+    if (!presetsShared) {
+      saveJson(PRESETS_KEY, localPresets().filter(function (p) { return p.name !== name; }));
+      return loadPresets();
+    }
+    return presetApi("DELETE", name).then(loadPresets);
+  }
+
+  function presetError(e) {
+    showStatus("範本儲存失敗：" + e.message, "error");
+  }
 
   // ---------- 格式 ----------
   function fmtNum(v, field) {
@@ -229,11 +314,6 @@
     saveSettings();
     syncControls();
     renderAll();
-  }
-
-  function writePresets(list) {
-    saveJson(PRESETS_KEY, list);
-    renderPresetSelect();
   }
 
   // 項目挑選面板：分頁顯示，青年人與得少用「對象 × 項目」矩陣
@@ -742,54 +822,52 @@
     $("preset-save-btn").addEventListener("click", function () {
       var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();
       if (!name) return;
-      var list = userPresets();
       if (findPreset(name) && !confirm("已有範本「" + name + "」，要覆蓋嗎？")) return;
-      list = list.filter(function (p) { return p.name !== name; });
-      var snap = presetSnapshot();
-      snap.name = name;
-      list.push(snap);
       settings.preset = name;
       saveSettings();
-      writePresets(list);
-      showStatus("已存成範本「" + name + "」（存在這台裝置的瀏覽器裡）", "ok");
+      presetSave(name, presetSnapshot()).then(function () {
+        showStatus("已存成範本「" + name + "」" + (presetsShared ? "（所有人共用）" : "（存在這台裝置）"), "ok");
+      }, presetError);
     });
     $("preset-update-btn").addEventListener("click", function () {
       var name = settings.preset;
-      var list = userPresets().map(function (p) {
-        if (p.name !== name) return p;
-        var snap = presetSnapshot();
-        snap.name = name;
-        return snap;
-      });
-      writePresets(list);
-      showStatus("已更新範本「" + name + "」", "ok");
+      presetSave(name, presetSnapshot()).then(function () {
+        showStatus("已更新範本「" + name + "」", "ok");
+      }, presetError);
     });
     $("preset-rename-btn").addEventListener("click", function () {
       var old = settings.preset;
       var name = (prompt("範本新名稱", old) || "").trim();
       if (!name || name === old) return;
       if (findPreset(name)) { alert("已有同名範本「" + name + "」"); return; }
-      var list = userPresets().map(function (p) {
-        if (p.name === old) p.name = name;
-        return p;
-      });
-      settings.preset = name;
-      saveSettings();
-      writePresets(list);
+      presetRename(old, name).then(function () {
+        settings.preset = name;
+        saveSettings();
+        renderPresetSelect();
+      }, presetError);
     });
     $("preset-delete-btn").addEventListener("click", function () {
       var name = settings.preset;
-      if (!name || !confirm("刪除範本「" + name + "」？")) return;
-      settings.preset = "";
-      saveSettings();
-      writePresets(userPresets().filter(function (p) { return p.name !== name; }));
+      if (!name || !confirm("刪除範本「" + name + "」？所有人都會看不到這個範本。")) return;
+      presetDelete(name).then(function () {
+        settings.preset = "";
+        saveSettings();
+        renderPresetSelect();
+      }, presetError);
+    });
+
+    // 回到這個分頁時重新讀取，看到別人剛存的範本
+    document.addEventListener("visibilitychange", function () {
+      if (document.visibilityState === "visible") loadPresets();
     });
 
     $("download-btn").addEventListener("click", downloadExcel);
   }
 
   // ---------- 啟動 ----------
+  presets = localPresets();
   renderPresetSelect();
+  loadPresets();
   syncControls();
   bindEvents();
 

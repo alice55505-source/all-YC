@@ -872,3 +872,4 @@ table.matrix td.na { color: var(--border); }
 .report-table th.cat-th { color: var(--text); text-align: center; background: var(--surface-2); }
 .report-table thead th { text-align: center; vertical-align: middle; }
 .report-table thead th.sticky-col { text-align: left; }
+.preset-note { margin: 0.35rem 0 0; font-size: 0.78rem; color: var(--text-muted); }
