@@ -20,7 +20,7 @@
 
   var weeks = [];
   var months = [];
-  var currentMonth = null;
+  var selectedMonths = [];
   var settings = loadJson(SETTINGS_KEY, null) || {};
   Object.keys(DEFAULT_SETTINGS).forEach(function (k) {
     if (settings[k] === undefined) settings[k] = DEFAULT_SETTINGS[k];
@@ -114,7 +114,8 @@
       return;
     }
     var keys = months.map(function (m) { return m.month; });
-    if (!currentMonth || keys.indexOf(currentMonth) < 0) currentMonth = keys[keys.length - 1];
+    selectedMonths = selectedMonths.filter(function (m) { return keys.indexOf(m) >= 0; });
+    if (!selectedMonths.length) selectedMonths = [keys[keys.length - 1]];
     $("app-main").style.display = "";
     renderMonthSelect();
     renderAll();
@@ -173,12 +174,13 @@
   }
 
   // ---------- 設定區 ----------
+  // 月份可多選；多選時同一張表並排比較
   function renderMonthSelect() {
-    var sel = $("month-select");
-    sel.innerHTML = months.slice().reverse().map(function (m) {
-      return '<option value="' + m.month + '">' + monthLabel(m.month) + "（" + m.weeks.length + " 週）</option>";
+    $("month-picker").innerHTML = months.map(function (m) {
+      var on = selectedMonths.indexOf(m.month) >= 0;
+      return '<label class="chip-check' + (on ? " on" : "") + '"><input type="checkbox" data-month="' + m.month + '"' +
+        (on ? " checked" : "") + " />" + monthLabel(m.month) + '<span class="chip-sub">' + m.weeks.length + " 週</span></label>";
     }).join("");
-    sel.value = currentMonth;
   }
 
   // ---------- 範本（全部由使用者自訂，存在這台裝置的瀏覽器） ----------
@@ -397,53 +399,126 @@
     return out;
   }
 
-  function buildReport() {
-    var report = R.computeMonth(weeks, currentMonth, settings.mode);
-    var prev = R.computeMonth(weeks, R.prevMonthKey(currentMonth), settings.mode);
-    var prevByName = {};
-    if (prev) prev.rows.forEach(function (r) { prevByName[r.type + ":" + r.name] = r; });
-    var fields = selectedFields();
-    var rows = orderedRows(report).map(function (row) {
-      var p = prevByName[row.type + ":" + row.name];
-      var cells = [];
-      fields.forEach(function (f) {
-        subColumns(f).forEach(function (c) {
-          var v = null;
-          var green = false;
-          if (c.kind === "value") {
-            v = row.values[f.key];
-            green = settings.highlight && R.isGreen(f, row.ratios[f.key]);
-          } else if (c.kind === "ratio") {
-            v = row.ratios[f.key];
-            green = settings.highlight && R.isGreen(f, v);
-          } else if (p && row.values[f.key] != null && p.values[f.key] != null) {
-            v = row.values[f.key] - p.values[f.key];
-          }
-          cells.push({ kind: c.kind, field: f, value: v, green: green });
-        });
-      });
-      return { row: row, cells: cells };
-    });
-    return { report: report, fields: fields, rows: rows, hasPrev: !!prev };
+  function monthShort(m) { return +m.slice(5, 7) + " 月"; }
+
+  function titleMonths() {
+    var years = {};
+    selectedMonths.forEach(function (m) { years[m.slice(0, 4)] = true; });
+    if (Object.keys(years).length === 1) {
+      return selectedMonths[0].slice(0, 4) + " 年 " + selectedMonths.map(function (m) { return +m.slice(5, 7); }).join("、") + " 月";
+    }
+    return selectedMonths.map(monthLabel).join("、");
   }
 
-  function rowLabel(row) {
-    var label = row.name;
-    if (row.type === "unit" && row.reported < row.weekCount) {
-      label += "（" + row.reported + "/" + row.weekCount + " 週）";
+  // 欄位：項目 → 月份 → 人數／佔比／較上月。固定值（基數、目標）只放一欄，取最後選取月份。
+  function buildColumns(fields) {
+    var last = selectedMonths[selectedMonths.length - 1];
+    var cols = [];
+    fields.forEach(function (f) {
+      (f.fixed ? [last] : selectedMonths).forEach(function (m) {
+        subColumns(f).forEach(function (c) {
+          cols.push({ field: f, month: m, kind: c.kind, label: c.label });
+        });
+      });
+    });
+    return cols;
+  }
+
+  // 表頭各層：[[{label, span}]]；多月時加月份層，有佔比／增減時加小標層
+  function headerLevels(cols) {
+    var levels = [];
+    function group(keyFn, labelFn) {
+      var row = [];
+      cols.forEach(function (c) {
+        var k = keyFn(c);
+        var lastCell = row[row.length - 1];
+        if (lastCell && lastCell.key === k) lastCell.span++;
+        else row.push({ key: k, label: labelFn(c), span: 1 });
+      });
+      return row;
+    }
+    levels.push(group(function (c) { return c.field.key; }, function (c) { return c.field.label; }));
+    if (selectedMonths.length > 1) {
+      levels.push(group(function (c) { return c.field.key + "|" + c.month; }, function (c) { return monthShort(c.month); }));
+    }
+    if (cols.some(function (c) { return c.kind !== "value"; })) {
+      levels.push(cols.map(function (c) { return { label: c.label, span: 1 }; }));
+    }
+    return levels;
+  }
+
+  function buildReport() {
+    var reports = {};
+    var prevRows = {};
+    var missingPrev = false;
+    selectedMonths.forEach(function (m) {
+      reports[m] = R.computeMonth(weeks, m, settings.mode);
+      var prev = R.computeMonth(weeks, R.prevMonthKey(m), settings.mode);
+      if (!prev) missingPrev = true;
+      var map = {};
+      if (prev) prev.rows.forEach(function (r) { map[r.type + ":" + r.name] = r; });
+      prevRows[m] = map;
+    });
+    var byMonth = {};
+    selectedMonths.forEach(function (m) {
+      var map = {};
+      reports[m].rows.forEach(function (r) { map[r.type + ":" + r.name] = r; });
+      byMonth[m] = map;
+    });
+    var fields = selectedFields();
+    var cols = buildColumns(fields);
+    var base = reports[selectedMonths[selectedMonths.length - 1]];
+    var rows = orderedRows(base).map(function (baseRow) {
+      var key = baseRow.type + ":" + baseRow.name;
+      var reported = 0;
+      var weekCount = 0;
+      selectedMonths.forEach(function (m) {
+        var r = byMonth[m][key];
+        if (r && r.type === "unit") { reported += r.reported; weekCount += r.weekCount; }
+      });
+      var cells = cols.map(function (c) {
+        var row = byMonth[c.month][key];
+        var f = c.field;
+        var v = null;
+        var green = false;
+        if (row && c.kind === "value") {
+          v = row.values[f.key];
+          green = settings.highlight && R.isGreen(f, row.ratios[f.key]);
+        } else if (row && c.kind === "ratio") {
+          v = row.ratios[f.key];
+          green = settings.highlight && R.isGreen(f, v);
+        } else if (row) {
+          var p = prevRows[c.month][key];
+          if (p && row.values[f.key] != null && p.values[f.key] != null) v = row.values[f.key] - p.values[f.key];
+        }
+        return { kind: c.kind, field: f, value: v, green: green };
+      });
+      return { row: baseRow, reported: reported, weekCount: weekCount, cells: cells };
+    });
+    return { reports: reports, fields: fields, cols: cols, rows: rows, missingPrev: missingPrev };
+  }
+
+  function rowLabel(r) {
+    var label = r.row.name;
+    if (r.row.type === "unit" && r.reported < r.weekCount) {
+      label += "（" + r.reported + "/" + r.weekCount + " 週）";
     }
     return label;
   }
 
+  function weeksText(built) {
+    return selectedMonths.map(function (m) {
+      var w = built.reports[m].weeks;
+      return (selectedMonths.length > 1 ? monthShort(m) + "：" : "主日 ") + w.map(md).join("、") + "（" + w.length + " 週）";
+    }).join("　");
+  }
+
   function renderReport() {
     var built = buildReport();
-    var report = built.report;
-    var w = report.weeks;
-    $("report-title").textContent = monthLabel(currentMonth) + " 雲嘉眾召會月報表";
+    $("report-title").textContent = titleMonths() + " 雲嘉眾召會月報表";
     $("report-badge").textContent = settings.mode === "sum" ? "合計" : "週平均";
-    $("report-sub").textContent = "主日 " + w.map(md).join("、") + "，共 " + w.length + " 週（" +
-      md(addDays(w[0], -6)) + "～" + md(w[w.length - 1]) + "）" +
-      (settings.compare && !built.hasPrev ? "　※ 上個月沒有資料，無法比較增減" : "");
+    $("report-sub").textContent = weeksText(built) +
+      (settings.compare && built.missingPrev ? "　※ 前一個月沒有資料的月份無法比較增減" : "");
 
     var table = $("report-table");
     if (!built.fields.length) {
@@ -455,54 +530,53 @@
     $("report-empty").style.display = "none";
     $("download-btn").disabled = false;
 
-    var multi = built.fields.some(function (f) { return subColumns(f).length > 1; });
-    var head1 = '<tr><th rowspan="' + (multi ? 2 : 1) + '" class="sticky-col">大區／小區</th>';
-    var head2 = "<tr>";
-    built.fields.forEach(function (f) {
-      var subs = subColumns(f);
-      if (multi) {
-        head1 += '<th colspan="' + subs.length + '" class="group-th">' + escapeHtml(f.label) + "</th>";
-        subs.forEach(function (c) { head2 += "<th>" + c.label + "</th>"; });
-      } else {
-        head1 += "<th>" + escapeHtml(f.label) + "</th>";
-      }
-    });
-    head1 += "</tr>";
-    head2 += "</tr>";
+    var levels = headerLevels(built.cols);
+    var head = levels.map(function (lv, i) {
+      var html = "<tr>";
+      if (i === 0) html += '<th rowspan="' + levels.length + '" class="sticky-col">大區／小區</th>';
+      lv.forEach(function (cell) {
+        var cls = i < levels.length - 1 ? ' class="group-th"' : "";
+        html += "<th" + cls + (cell.span > 1 ? ' colspan="' + cell.span + '"' : "") + ">" + escapeHtml(cell.label) + "</th>";
+      });
+      return html + "</tr>";
+    }).join("");
 
     var body = built.rows.map(function (r) {
       var cls = r.row.type === "unit" ? "" : r.row.type === "region" ? "region-row" : "total-row";
       var html = '<tr class="' + cls + '"><td class="sticky-col' + (r.row.type === "unit" ? " congregation-name" : "") + '">' +
-        escapeHtml(rowLabel(r.row)) + "</td>";
-      r.cells.forEach(function (c) {
+        escapeHtml(rowLabel(r)) + "</td>";
+      r.cells.forEach(function (c, i) {
         var text = c.kind === "ratio" ? fmtPct(c.value) : c.kind === "delta" ? fmtDelta(c.value) : fmtNum(c.value, c.field);
         var cl = [];
         if (c.green) cl.push("ok");
         if (c.kind === "delta" && c.value != null) cl.push(c.value > 0 ? "up" : c.value < 0 ? "down" : "");
         if (c.kind !== "value") cl.push("sub");
+        var col = built.cols[i];
+        var next = built.cols[i + 1];
+        if (next && next.field !== col.field) cl.push("field-end");
+        else if (selectedMonths.length > 1 && next && next.month !== col.month) cl.push("month-end");
         html += '<td class="' + cl.join(" ") + '">' + text + "</td>";
       });
       return html + "</tr>";
     }).join("");
 
-    table.innerHTML = "<thead>" + head1 + (multi ? head2 : "") + "</thead><tbody>" + body + "</tbody>";
+    table.innerHTML = "<thead>" + head + "</thead><tbody>" + body + "</tbody>";
   }
 
   function downloadExcel() {
     var built = buildReport();
-    var title = monthLabel(currentMonth) + " 雲嘉眾召會月報表（" + (settings.mode === "sum" ? "合計" : "週平均") + "）";
-    var aoa = [[title], ["主日：" + built.report.weeks.map(md).join("、")], []];
-    var h1 = ["大區／小區"];
-    var h2 = [""];
-    built.fields.forEach(function (f) {
-      subColumns(f).forEach(function (c, i) {
-        h1.push(i === 0 ? f.label : "");
-        h2.push(c.kind === "ratio" ? "佔比(%)" : c.label);
+    var title = titleMonths() + " 雲嘉眾召會月報表（" + (settings.mode === "sum" ? "合計" : "週平均") + "）";
+    var aoa = [[title], [weeksText(built)], []];
+    headerLevels(built.cols).forEach(function (lv, i) {
+      var line = [i === 0 ? "大區／小區" : ""];
+      lv.forEach(function (cell) {
+        line.push(cell.label === "佔比" ? "佔比(%)" : cell.label);
+        for (var k = 1; k < cell.span; k++) line.push("");
       });
+      aoa.push(line);
     });
-    aoa.push(h1, h2);
     built.rows.forEach(function (r) {
-      var line = [rowLabel(r.row)];
+      var line = [rowLabel(r)];
       r.cells.forEach(function (c) {
         if (c.value == null) { line.push(""); return; }
         var v = c.kind === "ratio" ? c.value * 100 : c.value;
@@ -511,15 +585,18 @@
       aoa.push(line);
     });
     var ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws["!cols"] = [{ wch: 16 }].concat(h1.slice(1).map(function () { return { wch: 9 }; }));
+    ws["!cols"] = [{ wch: 16 }].concat(built.cols.map(function () { return { wch: 9 }; }));
+    var name = selectedMonths.length > 1
+      ? selectedMonths[0] + "_" + selectedMonths[selectedMonths.length - 1]
+      : selectedMonths[0];
     var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, currentMonth);
-    XLSX.writeFile(wb, "雲嘉月報表_" + currentMonth + ".xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, name);
+    XLSX.writeFile(wb, "雲嘉月報表_" + name + ".xlsx");
   }
 
   function renderAll() {
     renderPresetState();
-    if (!weeks.length || !currentMonth) return;
+    if (!weeks.length || !selectedMonths.length) return;
     renderReport();
   }
 
@@ -530,7 +607,16 @@
       if (e.target.files[0]) loadFile(e.target.files[0]);
       e.target.value = "";
     });
-    $("month-select").addEventListener("change", function (e) { currentMonth = e.target.value; renderAll(); });
+    $("month-picker").addEventListener("change", function (e) {
+      var m = e.target.getAttribute("data-month");
+      if (!m) return;
+      var set = selectedMonths.filter(function (x) { return x !== m; });
+      if (e.target.checked) set.push(m);
+      if (!set.length) { e.target.checked = true; return; }
+      selectedMonths = months.map(function (x) { return x.month; }).filter(function (x) { return set.indexOf(x) >= 0; });
+      renderMonthSelect();
+      renderAll();
+    });
 
     document.querySelectorAll(".seg button").forEach(function (b) {
       b.addEventListener("click", function () {

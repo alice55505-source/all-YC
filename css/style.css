@@ -901,3 +901,8 @@ table.matrix td.na { color: var(--border); }
   border: 1px dashed var(--accent);
 }
 .picked-chip button:disabled { opacity: 0.2; }
+
+.chip-sub { margin-left: 0.35rem; font-size: 0.72rem; font-weight: 400; opacity: 0.75; }
+.report-table td.month-end, .report-table th.month-end { border-right: 1px solid var(--border); }
+.report-table td.field-end { border-right: 2px solid var(--border); }
+@media print { .report-table td.field-end, .report-table td.month-end { border-right: 1px solid #bbb; } }
