@@ -519,6 +519,13 @@
   // 表頭層級：月份（多月時）→ 大分類（有分類時）→ 項目 → 人數／佔比／較上月（有時）
   // 某欄在某層沒有內容時，由下一個有內容的層往上合併（最下層沒有時由上一層往下合併）。
   // 回傳 { rows: [[{label, colspan, rowspan, cls}]], grid: 給 Excel 用的二維文字陣列 }
+  // 第 i 欄是否為一個區塊（固定欄或某月份）的最後一欄，用來畫粗分隔線
+  function isMonthEnd(cols, i) {
+    var col = cols[i];
+    var next = cols[i + 1];
+    return !!next && (next.month !== col.month || !!next.fixed !== !!col.fixed);
+  }
+
   function headerLayout(cols) {
     var normal = cols.filter(function (c) { return !c.fixed; });
     var levels = [];
@@ -533,12 +540,12 @@
     function part(c, lv) {
       // 各種基數統一放在最上層的「基數」底下
       if (c.field.baseLabel) {
-        if (lv === baseLv) return { key: "BASE", label: "基數", cls: "group-th cat-th" };
+        if (lv === baseLv) return { key: "BASE", label: "基數", cls: "" };
         if (lv === "field") return { key: c.field.key, label: c.field.baseLabel, cls: "" };
         return null;
       }
-      if (lv === "month") return c.fixed ? null : { key: c.month, label: monthShort(c.month), cls: "group-th month-th" };
-      if (lv === "cat") return c.field.cat ? { key: c.field.cat, label: c.field.cat, cls: "group-th cat-th" } : null;
+      if (lv === "month") return c.fixed ? null : { key: c.month, label: monthShort(c.month), cls: "month-th" };
+      if (lv === "cat") return c.field.cat ? { key: c.field.cat, label: c.field.cat, cls: "" } : null;
       if (lv === "field") return { key: c.field.key, label: c.field.cat ? c.field.short : c.field.label, cls: "" };
       return c.fixed ? null : { key: c.kind, label: c.label, cls: "" };
     }
@@ -578,7 +585,8 @@
         var j = i + 1;
         while (j < cols.length && owners[j][r].id === cell.id) j++;
         if (cell.top === r) {
-          rows[r].push({ label: cell.label, colspan: j - i, rowspan: cell.bottom - cell.top + 1, cls: cell.cls });
+          var cls = cell.cls + (isMonthEnd(cols, j - 1) ? " month-end" : "");
+          rows[r].push({ label: cell.label, colspan: j - i, rowspan: cell.bottom - cell.top + 1, cls: cls.trim() });
         }
         for (var k = i; k < j; k++) grid[r].push(cell.top === r && k === i ? cell.label : "");
         i = j;
@@ -689,8 +697,7 @@
         if (c.kind !== "value") cl.push("sub");
         var col = built.cols[i];
         var next = built.cols[i + 1];
-        if (next && (next.month !== col.month || !!next.fixed !== !!col.fixed)) cl.push("month-end");
-        else if (next && next.field !== col.field) cl.push("field-end");
+        if (isMonthEnd(built.cols, i)) cl.push("month-end");
         html += '<td class="' + cl.join(" ") + '">' + text + "</td>";
       });
       return html + "</tr>";

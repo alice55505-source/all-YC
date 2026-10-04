@@ -684,13 +684,6 @@ a { color: var(--accent); }
   font-size: 0.85rem;
 }
 
-.report-table th.group-th {
-  text-align: center;
-  color: var(--text);
-  border-bottom: 1px solid var(--border);
-}
-
-.report-table thead tr:nth-child(2) th { font-size: 0.76rem; }
 
 .sticky-col {
   position: sticky;
@@ -866,10 +859,19 @@ table.matrix td.na { color: var(--border); }
 .picked-chip button:disabled { opacity: 0.2; }
 
 .chip-sub { margin-left: 0.35rem; font-size: 0.72rem; font-weight: 400; opacity: 0.75; }
-.report-table td.field-end { border-right: 1px solid var(--border); }
-.report-table td.month-end { border-right: 2px solid var(--text-muted); }
-.report-table th.month-th { color: var(--accent); font-size: 0.95rem; text-align: center; border-left: 2px solid var(--text-muted); }
-.report-table th.cat-th { color: var(--text); text-align: center; background: var(--surface-2); }
-.report-table thead th { text-align: center; vertical-align: middle; }
-.report-table thead th.sticky-col { text-align: left; }
+/* 月報表：完整格線，月份之間加粗 */
+.report-table thead th {
+  text-align: center;
+  vertical-align: middle;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 0.8rem;
+  padding: 0.45rem 0.5rem;
+}
+.report-table thead th.sticky-col { text-align: left; z-index: 2; }
+.report-table th.month-th { color: var(--accent); font-size: 0.95rem; }
+.report-table { border-collapse: separate; border-spacing: 0; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.report-table thead th, .report-table tbody td { border-width: 0 1px 1px 0; border-style: solid; border-color: var(--border); }
+.report-table td.month-end, .report-table th.month-end { border-right: 2px solid var(--text-muted); }
+
 .preset-note { margin: 0.35rem 0 0; font-size: 0.78rem; color: var(--text-muted); }
