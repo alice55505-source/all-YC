@@ -375,7 +375,7 @@
   function subColumns(f) {
     var cols = [{ kind: "value", label: settings.mode === "sum" && f.agg !== "last" && !f.monthDiffOf ? "合計" : "人數" }];
     if (settings.showRatio && f.ratio) cols.push({ kind: "ratio", label: "佔比" });
-    if (settings.compare) cols.push({ kind: "delta", label: "較上月" });
+    if (settings.compare && !f.fixed) cols.push({ kind: "delta", label: "較上月" });
     return cols;
   }
 

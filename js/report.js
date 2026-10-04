@@ -5,9 +5,10 @@
 
   // 週報分頁「顯示區」的欄位（第 5 列起每列一個小區）。
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
+  // fixed: 固定值（基數、目標），不顯示較上月增減
   // ratio: 佔比的分母欄位；green: 達標門檻（佔比 >= 門檻；gt 表示要「大於」）
   var FIELDS = [
-    { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last" },
+    { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true },
     { key: "sunday", label: "主日", col: "D", group: "召會生活", ratio: "base", green: 1, gt: true },
     { key: "sundayYP", label: "主日青職", col: "F", group: "召會生活", ratio: "base", green: 0.15 },
     { key: "prayer", label: "禱告", col: "H", group: "召會生活", ratio: "base", green: 1 / 3 },
@@ -19,19 +20,19 @@
     { key: "home", label: "家聚會", group: "召會生活", sumOf: ["homeOut", "homeIn"], ratio: "base", green: 1.1, note: "出訪＋受訪" },
     { key: "lifeStudy", label: "生命讀經", col: "R", group: "召會生活", ratio: "base", green: 0.7 },
     { key: "morning", label: "晨興", col: "T", group: "召會生活", ratio: "base", green: 0.7 },
-    { key: "baptGoal", label: "受浸目標", col: "V", group: "受浸", agg: "last" },
+    { key: "baptGoal", label: "受浸目標", col: "V", group: "受浸", agg: "last", fixed: true },
     { key: "baptTotal", label: "受浸累計", col: "W", group: "受浸", agg: "last", ratio: "baptGoal" },
     { key: "baptMonth", label: "本月受浸", group: "受浸", monthDiffOf: "baptTotal", note: "本月底累計 − 上月底累計" },
 
-    { key: "ypBase", label: "青職基數", col: "AA", group: "青職", agg: "last" },
+    { key: "ypBase", label: "青職基數", col: "AA", group: "青職", agg: "last", fixed: true },
     { key: "ypSunday", label: "青職主日", col: "AB", group: "青職", ratio: "ypBase", green: 1, gt: true },
     { key: "ypHome", label: "青職家聚", col: "AC", group: "青職", ratio: "ypBase", green: 1.3, gt: true },
     { key: "ypGroup", label: "青職排聚", col: "AD", group: "青職", ratio: "ypBase", green: 1.1, gt: true },
-    { key: "csBase", label: "大專基數", col: "AE", group: "大專", agg: "last" },
+    { key: "csBase", label: "大專基數", col: "AE", group: "大專", agg: "last", fixed: true },
     { key: "csSunday", label: "大專主日", col: "AF", group: "大專", ratio: "csBase", green: 1, gt: true },
     { key: "csHome", label: "大專家聚", col: "AG", group: "大專", ratio: "csBase", green: 1.3, gt: true },
     { key: "csGroup", label: "大專排聚", col: "AH", group: "大專", ratio: "csBase", green: 1.1, gt: true },
-    { key: "hsBase", label: "國高中基數", col: "AI", group: "國高中", agg: "last" },
+    { key: "hsBase", label: "國高中基數", col: "AI", group: "國高中", agg: "last", fixed: true },
     { key: "hsSunday", label: "國高中主日", col: "AJ", group: "國高中", ratio: "hsBase", green: 1, gt: true },
     { key: "hsHome", label: "國高中家聚", col: "AK", group: "國高中", ratio: "hsBase", green: 1.3, gt: true },
     { key: "hsGroup", label: "國高中排聚", col: "AL", group: "國高中", ratio: "hsBase", green: 1.1, gt: true },
@@ -61,7 +62,7 @@
     { key: "drHomeSh", label: "得少受訪・高中", col: "CQ", input: true, group: "得少" },
 
     { key: "chRoster", label: "兒童名冊", col: "AP", group: "兒童", agg: "last" },
-    { key: "chBase", label: "兒童基數", col: "AQ", group: "兒童", agg: "last" },
+    { key: "chBase", label: "兒童基數", col: "AQ", group: "兒童", agg: "last", fixed: true },
     { key: "chSunday", label: "兒童主日", col: "AR", group: "兒童", ratio: "chBase", green: 1, gt: true },
     { key: "chGroupCount", label: "兒童排數", col: "AS", group: "兒童" },
     { key: "chAll", label: "兒童排兒童全部", col: "AT", group: "兒童", ratio: "chBase", green: 1.5 },
