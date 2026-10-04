@@ -343,7 +343,7 @@
   // 項目挑選面板：分頁顯示，青年人與得少用「對象 × 項目」矩陣
   var PICKER_TABS = [
     {
-      name: "召會生活",
+      name: "全召會",
       chips: [["base", "基數"], ["sunday", "主日"], ["sundayYP", "主日青職"], ["prayer", "禱告"], ["groupCount", "排數"],
         ["smallGroup", "小排"], ["gospel", "福音出訪"], ["home", "家聚會"], ["homeOut", "家聚出訪"], ["homeIn", "家聚受訪"],
         ["lifeStudy", "生命讀經"], ["morning", "晨興"]]
