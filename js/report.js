@@ -5,7 +5,7 @@
 
   // 週報分頁「顯示區」的欄位（第 5 列起每列一個小區）。
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
-  // fixed: 固定值（基數、目標），不顯示較上月增減
+  // fixed: 固定值（基數、目標、兒童排數），只放一欄、不分月份、不顯示較上月增減
   // ratio: 佔比的分母欄位
   var FIELDS = [
     { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true },
@@ -64,7 +64,7 @@
     { key: "chRoster", label: "兒童名冊", col: "AP", group: "兒童", agg: "last" },
     { key: "chBase", label: "兒童基數", col: "AQ", group: "兒童", agg: "last", fixed: true },
     { key: "chSunday", label: "兒童主日", col: "AR", group: "兒童", ratio: "chBase" },
-    { key: "chGroupCount", label: "兒童排數", col: "AS", group: "兒童" },
+    { key: "chGroupCount", label: "兒童排數", col: "AS", group: "兒童", agg: "last", fixed: true },
     { key: "chAll", label: "兒童排兒童全部", col: "AT", group: "兒童", ratio: "chBase" },
     { key: "chGospel", label: "兒童排福音兒童", col: "AU", group: "兒童" },
     { key: "chAdults", label: "兒童排大人全部", col: "AV", group: "兒童" },
