@@ -882,3 +882,6 @@ table.matrix td.na { color: var(--border); }
 .report-table td.month-end { border-right: 2px solid var(--text-muted); }
 .report-table th.month-th { color: var(--accent); font-size: 0.95rem; text-align: center; border-left: 2px solid var(--text-muted); }
 @media print { .report-table td.field-end, .report-table td.month-end { border-right: 1px solid #bbb; } }
+.report-table th.cat-th { color: var(--text); text-align: center; background: var(--surface-2); }
+.report-table thead th { text-align: center; vertical-align: middle; }
+.report-table thead th.sticky-col { text-align: left; }

@@ -5,6 +5,7 @@
 
   // 週報分頁「顯示區」的欄位（第 5 列起每列一個小區）。
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
+  // cat / short: 報表表頭的大分類與分類底下的短名稱
   // fixed: 固定值（基數、目標、兒童排數、得少人數），只放一欄、不分月份、不顯示較上月增減
   // ratio: 佔比的分母欄位
   var FIELDS = [
@@ -48,27 +49,27 @@
     { key: "shHome", label: "高中家聚", group: "高中", sumOf: ["shHomeOut", "shHomeIn"], note: "出訪＋受訪" },
     { key: "shGroup", label: "高中排聚", col: "CH", input: true, group: "高中" },
 
-    { key: "drCount", label: "得少人數", col: "AM", group: "得少", agg: "last", fixed: true },
-    { key: "drCountEs", label: "得少人數・小學", col: "CI", input: true, group: "得少", agg: "last", fixed: true },
-    { key: "drCountJh", label: "得少人數・國中", col: "CJ", input: true, group: "得少", agg: "last", fixed: true },
-    { key: "drCountSh", label: "得少人數・高中", col: "CK", input: true, group: "得少", agg: "last", fixed: true },
-    { key: "drSunday", label: "得少主日", col: "AN", group: "得少" },
-    { key: "drSundayEs", label: "得少主日・小學", col: "CL", input: true, group: "得少" },
-    { key: "drSundayJh", label: "得少主日・國中", col: "CM", input: true, group: "得少" },
-    { key: "drSundaySh", label: "得少主日・高中", col: "CN", input: true, group: "得少" },
-    { key: "drHome", label: "得少受訪", col: "AO", group: "得少" },
-    { key: "drHomeEs", label: "得少受訪・小學", col: "CO", input: true, group: "得少" },
-    { key: "drHomeJh", label: "得少受訪・國中", col: "CP", input: true, group: "得少" },
-    { key: "drHomeSh", label: "得少受訪・高中", col: "CQ", input: true, group: "得少" },
+    { key: "drCount", label: "得少人數", cat: "得少", short: "人數", col: "AM", group: "得少", agg: "last", fixed: true },
+    { key: "drCountEs", label: "得少人數・小學", cat: "得少", short: "人數・小學", col: "CI", input: true, group: "得少", agg: "last", fixed: true },
+    { key: "drCountJh", label: "得少人數・國中", cat: "得少", short: "人數・國中", col: "CJ", input: true, group: "得少", agg: "last", fixed: true },
+    { key: "drCountSh", label: "得少人數・高中", cat: "得少", short: "人數・高中", col: "CK", input: true, group: "得少", agg: "last", fixed: true },
+    { key: "drSunday", label: "得少主日", cat: "得少", short: "主日", col: "AN", group: "得少" },
+    { key: "drSundayEs", label: "得少主日・小學", cat: "得少", short: "主日・小學", col: "CL", input: true, group: "得少" },
+    { key: "drSundayJh", label: "得少主日・國中", cat: "得少", short: "主日・國中", col: "CM", input: true, group: "得少" },
+    { key: "drSundaySh", label: "得少主日・高中", cat: "得少", short: "主日・高中", col: "CN", input: true, group: "得少" },
+    { key: "drHome", label: "得少受訪", cat: "得少", short: "受訪", col: "AO", group: "得少" },
+    { key: "drHomeEs", label: "得少受訪・小學", cat: "得少", short: "受訪・小學", col: "CO", input: true, group: "得少" },
+    { key: "drHomeJh", label: "得少受訪・國中", cat: "得少", short: "受訪・國中", col: "CP", input: true, group: "得少" },
+    { key: "drHomeSh", label: "得少受訪・高中", cat: "得少", short: "受訪・高中", col: "CQ", input: true, group: "得少" },
 
-    { key: "chRoster", label: "兒童名冊", col: "AP", group: "兒童", agg: "last" },
-    { key: "chBase", label: "兒童基數", col: "AQ", group: "兒童", agg: "last", fixed: true },
-    { key: "chSunday", label: "兒童主日", col: "AR", group: "兒童", ratio: "chBase" },
-    { key: "chGroupCount", label: "兒童排數", col: "AS", group: "兒童", agg: "last", fixed: true },
-    { key: "chAll", label: "兒童排兒童全部", col: "AT", group: "兒童", ratio: "chBase" },
-    { key: "chGospel", label: "兒童排福音兒童", col: "AU", group: "兒童" },
-    { key: "chAdults", label: "兒童排大人全部", col: "AV", group: "兒童" },
-    { key: "chParents", label: "兒童排福音家長", col: "AW", group: "兒童" }
+    { key: "chRoster", label: "兒童名冊", cat: "兒童主日", short: "名冊", col: "AP", group: "兒童", agg: "last" },
+    { key: "chBase", label: "兒童基數", cat: "兒童主日", short: "基數", col: "AQ", group: "兒童", agg: "last", fixed: true },
+    { key: "chSunday", label: "兒童主日", cat: "兒童主日", short: "主日", col: "AR", group: "兒童", ratio: "chBase" },
+    { key: "chGroupCount", label: "兒童排數", cat: "兒童排", short: "排數", col: "AS", group: "兒童", agg: "last", fixed: true },
+    { key: "chAll", label: "兒童排兒童全部", cat: "兒童排", short: "兒童全部", col: "AT", group: "兒童", ratio: "chBase" },
+    { key: "chGospel", label: "兒童排福音兒童", cat: "兒童排", short: "福音兒童", col: "AU", group: "兒童" },
+    { key: "chAdults", label: "兒童排大人全部", cat: "兒童排", short: "大人全部", col: "AV", group: "兒童" },
+    { key: "chParents", label: "兒童排福音家長", cat: "兒童排", short: "福音家長", col: "AW", group: "兒童" }
   ];
 
   var FIELD_BY_KEY = {};

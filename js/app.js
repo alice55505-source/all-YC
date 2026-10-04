@@ -406,6 +406,20 @@
   // 其餘依 月份 → 項目 → 人數／佔比／較上月 排列，一個月全部列完再換下個月。
   function buildColumns(fields) {
     var last = selectedMonths[selectedMonths.length - 1];
+    // 同一個大分類（兒童主日、兒童排、得少）的項目排在一起，分類依第一次出現的位置；
+    // 固定欄與每月欄各自排
+    function groupByCat(list) {
+      var order = [];
+      list.forEach(function (f) {
+        var k = f.cat || "#" + f.key;
+        if (order.indexOf(k) < 0) order.push(k);
+      });
+      return list.slice().sort(function (x, y) {
+        return order.indexOf(x.cat || "#" + x.key) - order.indexOf(y.cat || "#" + y.key);
+      });
+    }
+    fields = groupByCat(fields.filter(function (f) { return f.fixed; }))
+      .concat(groupByCat(fields.filter(function (f) { return !f.fixed; })));
     var cols = [];
     fields.forEach(function (f) {
       if (f.fixed) cols.push({ field: f, month: last, kind: "value", label: "人數", fixed: true });
@@ -421,47 +435,66 @@
     return cols;
   }
 
-  // 表頭：回傳 { rows: [[{label, colspan, rowspan, cls}]], grid: 給 Excel 用的二維文字陣列 }
+  // 表頭層級：月份（多月時）→ 大分類（有分類時）→ 項目 → 人數／佔比／較上月（有時）
+  // 某欄在某層沒有內容時，由下一個有內容的層往上合併（最下層沒有時由上一層往下合併）。
+  // 回傳 { rows: [[{label, colspan, rowspan, cls}]], grid: 給 Excel 用的二維文字陣列 }
   function headerLayout(cols) {
-    var multi = selectedMonths.length > 1;
-    var hasKind = cols.some(function (c) { return c.kind !== "value"; });
-    var monthLv = multi ? 0 : -1;
-    var fieldLv = multi ? 1 : 0;
-    var kindLv = hasKind ? fieldLv + 1 : -1;
-    var depth = fieldLv + 1 + (hasKind ? 1 : 0);
+    var normal = cols.filter(function (c) { return !c.fixed; });
+    var levels = [];
+    if (selectedMonths.length > 1) levels.push("month");
+    if (cols.some(function (c) { return c.field.cat; })) levels.push("cat");
+    levels.push("field");
+    if (normal.some(function (c) { return c.kind !== "value"; })) levels.push("kind");
+    var depth = levels.length;
+
+    function part(c, lv) {
+      if (lv === "month") return c.fixed ? null : { key: c.month, label: monthShort(c.month), cls: "group-th month-th" };
+      if (lv === "cat") return c.field.cat ? { key: c.field.cat, label: c.field.cat, cls: "group-th cat-th" } : null;
+      if (lv === "field") return { key: c.field.key, label: c.field.cat ? c.field.short : c.field.label, cls: "" };
+      return c.fixed ? null : { key: c.kind, label: c.label, cls: "" };
+    }
+
+    // 每欄每層：所屬的格子（起始層、結束層、key、文字）
+    var owners = cols.map(function (c) {
+      var parts = levels.map(function (lv) { return part(c, lv); });
+      var out = [];
+      var prefix = c.fixed ? "F" : "N";
+      var keys = [];
+      for (var i = 0; i < depth; i++) { keys.push(parts[i] ? (prefix += "|" + parts[i].key) : null); }
+      for (var r = 0; r < depth; r++) {
+        var o = r;
+        while (o < depth && !parts[o]) o++;
+        if (o === depth) { o = r; while (o >= 0 && !parts[o]) o--; }
+        var top = o;
+        while (top > 0 && !parts[top - 1] && (function (t) {
+          var below = t; while (below < depth && !parts[below]) below++; return below === o;
+        })(top - 1)) top--;
+        var bottom = o;
+        while (bottom + 1 < depth && !parts[bottom + 1] && (function (t) {
+          var below = t; while (below < depth && !parts[below]) below++; return below === depth;
+        })(bottom + 1)) bottom++;
+        out.push({ top: top, bottom: bottom, id: keys[o] + "@" + top + "-" + bottom, label: parts[o].label, cls: parts[o].cls });
+      }
+      return out;
+    });
+
     var rows = [];
     var grid = [];
-    for (var i = 0; i < depth; i++) { rows.push([]); grid.push([i === 0 ? "召會" : ""]); }
+    for (var r = 0; r < depth; r++) { rows.push([]); grid.push([r === 0 ? "召會" : ""]); }
     rows[0].push({ label: "召會", rowspan: depth, colspan: 1, cls: "sticky-col" });
-
-    function put(level, label, span, rowspan, cls) {
-      rows[level].push({ label: label, colspan: span, rowspan: rowspan || 1, cls: cls || "" });
-      for (var r = level; r < level + (rowspan || 1); r++) {
-        for (var k = 0; k < span; k++) grid[r].push(r === level && k === 0 ? label : "");
-      }
-    }
-
-    var i2 = 0;
-    while (i2 < cols.length) {
-      var c = cols[i2];
-      if (c.fixed) { put(0, c.field.label, 1, depth); i2++; continue; }
-      var j = i2;
-      while (j < cols.length && !cols[j].fixed && cols[j].month === c.month) j++;
-      if (multi) put(monthLv, monthShort(c.month), j - i2, 1, "group-th month-th");
-      var k = i2;
-      while (k < j) {
-        var e = k;
-        while (e < j && cols[e].field === cols[k].field) e++;
-        var lastLevel = kindLv < 0;
-        put(fieldLv, cols[k].field.label, e - k, 1, lastLevel ? "" : "group-th");
-        if (kindLv >= 0) {
-          for (var x = k; x < e; x++) put(kindLv, cols[x].label === "佔比" ? "佔比" : cols[x].label, 1);
+    for (r = 0; r < depth; r++) {
+      var i = 0;
+      while (i < cols.length) {
+        var cell = owners[i][r];
+        var j = i + 1;
+        while (j < cols.length && owners[j][r].id === cell.id) j++;
+        if (cell.top === r) {
+          rows[r].push({ label: cell.label, colspan: j - i, rowspan: cell.bottom - cell.top + 1, cls: cell.cls });
         }
-        k = e;
+        for (var k = i; k < j; k++) grid[r].push(cell.top === r && k === i ? cell.label : "");
+        i = j;
       }
-      i2 = j;
     }
-    // grid 的列已依層級逐一填入；rowspan 的格子在下層也補了空白，欄數一致
     return { rows: rows, grid: grid };
   }
 
