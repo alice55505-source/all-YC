@@ -872,3 +872,32 @@ table.matrix td.na { color: var(--border); }
   font-size: 0.78rem;
   font-weight: 500;
 }
+
+/* 範本 */
+.preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.9rem;
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
+}
+.preset-dirty { color: var(--warn); }
+.link-btn.danger { color: var(--danger); }
+.link-btn[hidden], .preset-actions[hidden], .preset-dirty[hidden] { display: none; }
+
+.picked-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+.picked-tools button { white-space: nowrap; padding: 0.45rem 0.8rem; font-size: 0.85rem; }
+.picked-tools button[hidden] { display: none; }
+
+.picked-chips.ordering .picked-chip, #picked-chips.ordering .picked-chip {
+  padding: 0.2rem 0.2rem;
+  background: var(--surface-2);
+  border: 1px dashed var(--accent);
+}
+.picked-chip button:disabled { opacity: 0.2; }

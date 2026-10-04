@@ -9,27 +9,13 @@
   var PRESETS_KEY = "yc-presets-v1";
   var CACHE_KEY = "yc-cache-v1";
 
-  var BUILTIN_PRESETS = [
-    {
-      name: "召會生活月報",
-      fields: ["base", "sunday", "sundayYP", "prayer", "smallGroup", "gospel", "home", "lifeStudy", "morning", "baptMonth", "baptTotal"]
-    },
-    {
-      name: "青年人月報",
-      fields: ["ypBase", "ypSunday", "ypHome", "ypGroup", "csBase", "csSunday", "csHome", "csGroup", "hsBase", "hsSunday", "hsHome", "hsGroup", "drCount", "drSunday", "drHome"]
-    },
-    {
-      name: "兒童月報",
-      fields: ["chRoster", "chBase", "chSunday", "chGroupCount", "chAll", "chGospel", "chAdults", "chParents"]
-    }
-  ];
-
   var DEFAULT_SETTINGS = {
     mode: "avg",
     showRatio: true,
     compare: false,
     highlight: true,
-    fields: BUILTIN_PRESETS[0].fields.slice()
+    fields: ["base", "sunday", "sundayYP", "prayer", "smallGroup", "gospel", "home", "lifeStudy", "morning", "baptMonth", "baptTotal"],
+    preset: ""
   };
 
   var weeks = [];
@@ -195,19 +181,43 @@
     sel.value = currentMonth;
   }
 
+  // ---------- 範本（全部由使用者自訂，存在這台裝置的瀏覽器） ----------
+  var PRESET_KEYS = ["fields", "mode", "showRatio", "compare", "highlight"];
+
+  function presetSnapshot() {
+    var p = {};
+    PRESET_KEYS.forEach(function (k) { p[k] = Array.isArray(settings[k]) ? settings[k].slice() : settings[k]; });
+    return p;
+  }
+
+  function findPreset(name) {
+    var list = userPresets();
+    for (var i = 0; i < list.length; i++) if (list[i].name === name) return list[i];
+    return null;
+  }
+
   function renderPresetSelect() {
-    var sel = $("preset-select");
-    var html = '<option value="">— 選擇範本 —</option><optgroup label="內建">';
-    BUILTIN_PRESETS.forEach(function (p, i) { html += '<option value="b' + i + '">' + escapeHtml(p.name) + "</option>"; });
-    html += "</optgroup>";
     var mine = userPresets();
-    if (mine.length) {
-      html += '<optgroup label="我的範本">';
-      mine.forEach(function (p, i) { html += '<option value="u' + i + '">' + escapeHtml(p.name) + "</option>"; });
-      html += "</optgroup>";
-    }
+    if (settings.preset && !findPreset(settings.preset)) settings.preset = "";
+    var html = '<option value="">' + (mine.length ? "— 選擇範本 —" : "— 還沒有範本 —") + "</option>";
+    mine.forEach(function (p) {
+      html += '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + "</option>";
+    });
+    var sel = $("preset-select");
     sel.innerHTML = html;
-    $("preset-delete-btn").style.visibility = "hidden";
+    sel.value = settings.preset || "";
+    renderPresetState();
+  }
+
+  // 目前設定跟選取的範本不同時提示「尚未存入」
+  function renderPresetState() {
+    var p = settings.preset ? findPreset(settings.preset) : null;
+    $("preset-actions").hidden = !p;
+    if (!p) return;
+    var cur = presetSnapshot();
+    var dirty = PRESET_KEYS.some(function (k) { return JSON.stringify(cur[k]) !== JSON.stringify(p[k]); });
+    $("preset-dirty").hidden = !dirty;
+    $("preset-update-btn").hidden = !dirty;
   }
 
   function applyPreset(p) {
@@ -215,9 +225,15 @@
     ["mode", "showRatio", "compare", "highlight"].forEach(function (k) {
       if (p[k] !== undefined) settings[k] = p[k];
     });
+    settings.preset = p.name;
     saveSettings();
     syncControls();
     renderAll();
+  }
+
+  function writePresets(list) {
+    saveJson(PRESETS_KEY, list);
+    renderPresetSelect();
   }
 
   // 項目挑選面板：分頁顯示，青年人與得少用「對象 × 項目」矩陣
@@ -257,6 +273,7 @@
     }
   ];
   var pickerTab = 0;
+  var ordering = false;
 
   function tabKeys(tab) {
     if (tab.chips) return tab.chips.map(function (c) { return c[0]; });
@@ -306,9 +323,18 @@
   function renderPicked() {
     var fields = selectedFields();
     $("picked-count").textContent = fields.length ? "已選 " + fields.length + " 項" : "尚未選擇";
-    $("picked-chips").innerHTML = fields.map(function (f) {
-      return '<span class="picked-chip">' + escapeHtml(f.label) +
-        '<button data-remove="' + f.key + '" title="移除" aria-label="移除 ' + escapeHtml(f.label) + '">×</button></span>';
+    $("picked-chips").classList.toggle("ordering", ordering);
+    $("order-toggle").textContent = ordering ? "完成排序" : "調整順序";
+    $("order-toggle").hidden = fields.length < 2 && !ordering;
+    $("picked-chips").innerHTML = fields.map(function (f, i) {
+      var label = escapeHtml(f.label);
+      if (ordering) {
+        return '<span class="picked-chip">' +
+          '<button data-move="' + i + '" data-dir="-1"' + (i === 0 ? " disabled" : "") + ' aria-label="往前">‹</button>' + label +
+          '<button data-move="' + i + '" data-dir="1"' + (i === fields.length - 1 ? " disabled" : "") + ' aria-label="往後">›</button></span>';
+      }
+      return '<span class="picked-chip">' + label +
+        '<button data-remove="' + f.key + '" title="移除" aria-label="移除 ' + label + '">×</button></span>';
     }).join("");
   }
 
@@ -337,10 +363,12 @@
     });
     renderFieldPicker();
     renderPicked();
+    renderPresetState();
   }
 
+  // 報表欄位順序 = 使用者選取／排列的順序
   function selectedFields() {
-    return FIELDS.filter(function (f) { return settings.fields.indexOf(f.key) >= 0; });
+    return settings.fields.map(function (k) { return FIELD_BY_KEY[k]; }).filter(Boolean);
   }
 
   // ---------- 月報表 ----------
@@ -490,6 +518,7 @@
   }
 
   function renderAll() {
+    renderPresetState();
     if (!weeks.length || !currentMonth) return;
     renderReport();
   }
@@ -524,10 +553,26 @@
       panel.hidden = !panel.hidden;
       $("picker-toggle").textContent = panel.hidden ? "＋ 編輯項目" : "完成";
     });
+    $("order-toggle").addEventListener("click", function () {
+      ordering = !ordering;
+      renderPicked();
+    });
     $("picked-chips").addEventListener("click", function (e) {
-      var key = e.target.getAttribute("data-remove");
-      if (!key) return;
-      settings.fields = settings.fields.filter(function (k) { return k !== key; });
+      var btn = e.target.closest("button");
+      if (!btn) return;
+      var key = btn.getAttribute("data-remove");
+      if (key) {
+        settings.fields = settings.fields.filter(function (k) { return k !== key; });
+      } else if (btn.hasAttribute("data-move")) {
+        var list = selectedFields().map(function (f) { return f.key; });
+        var i = +btn.getAttribute("data-move");
+        var j = i + +btn.getAttribute("data-dir");
+        if (j < 0 || j >= list.length) return;
+        var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+        settings.fields = list;
+      } else {
+        return;
+      }
       fieldsChanged();
     });
     $("field-picker").addEventListener("change", function (e) {
@@ -556,35 +601,59 @@
     });
 
     $("preset-select").addEventListener("change", function (e) {
-      var v = e.target.value;
-      $("preset-delete-btn").style.visibility = v.charAt(0) === "u" ? "visible" : "hidden";
-      if (!v) return;
-      var p = v.charAt(0) === "b" ? BUILTIN_PRESETS[+v.slice(1)] : userPresets()[+v.slice(1)];
-      if (p) applyPreset(p);
+      var p = findPreset(e.target.value);
+      if (p) {
+        applyPreset(p);
+      } else {
+        settings.preset = "";
+        saveSettings();
+        renderPresetState();
+      }
     });
     $("preset-save-btn").addEventListener("click", function () {
-      var name = (prompt("範本名稱（例如：長老月會用）") || "").trim();
+      var name = (prompt("新範本名稱（例如：長老月會用）") || "").trim();
       if (!name) return;
-      var list = userPresets().filter(function (p) { return p.name !== name; });
-      list.push({
-        name: name, fields: settings.fields.slice(), mode: settings.mode,
-        showRatio: settings.showRatio, compare: settings.compare, highlight: settings.highlight
-      });
-      saveJson(PRESETS_KEY, list);
-      renderPresetSelect();
-      $("preset-select").value = "u" + (list.length - 1);
-      $("preset-delete-btn").style.visibility = "visible";
+      var list = userPresets();
+      if (findPreset(name) && !confirm("已有範本「" + name + "」，要覆蓋嗎？")) return;
+      list = list.filter(function (p) { return p.name !== name; });
+      var snap = presetSnapshot();
+      snap.name = name;
+      list.push(snap);
+      settings.preset = name;
+      saveSettings();
+      writePresets(list);
       showStatus("已存成範本「" + name + "」（存在這台裝置的瀏覽器裡）", "ok");
     });
+    $("preset-update-btn").addEventListener("click", function () {
+      var name = settings.preset;
+      var list = userPresets().map(function (p) {
+        if (p.name !== name) return p;
+        var snap = presetSnapshot();
+        snap.name = name;
+        return snap;
+      });
+      writePresets(list);
+      showStatus("已更新範本「" + name + "」", "ok");
+    });
+    $("preset-rename-btn").addEventListener("click", function () {
+      var old = settings.preset;
+      var name = (prompt("範本新名稱", old) || "").trim();
+      if (!name || name === old) return;
+      if (findPreset(name)) { alert("已有同名範本「" + name + "」"); return; }
+      var list = userPresets().map(function (p) {
+        if (p.name === old) p.name = name;
+        return p;
+      });
+      settings.preset = name;
+      saveSettings();
+      writePresets(list);
+    });
     $("preset-delete-btn").addEventListener("click", function () {
-      var v = $("preset-select").value;
-      if (v.charAt(0) !== "u") return;
-      var list = userPresets();
-      var p = list[+v.slice(1)];
-      if (!p || !confirm("刪除範本「" + p.name + "」？")) return;
-      list.splice(+v.slice(1), 1);
-      saveJson(PRESETS_KEY, list);
-      renderPresetSelect();
+      var name = settings.preset;
+      if (!name || !confirm("刪除範本「" + name + "」？")) return;
+      settings.preset = "";
+      saveSettings();
+      writePresets(userPresets().filter(function (p) { return p.name !== name; }));
     });
 
     $("download-btn").addEventListener("click", downloadExcel);
