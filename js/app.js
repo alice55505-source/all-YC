@@ -10,10 +10,8 @@
   var CACHE_KEY = "yc-cache-v1";
 
   var DEFAULT_SETTINGS = {
-    mode: "avg",
     showRatio: true,
     compare: false,
-    highlight: true,
     fields: ["base", "sunday", "sundayYP", "prayer", "smallGroup", "gospel", "home", "lifeStudy", "morning", "baptMonth", "baptTotal"],
     preset: ""
   };
@@ -184,7 +182,7 @@
   }
 
   // ---------- 範本（全部由使用者自訂，存在這台裝置的瀏覽器） ----------
-  var PRESET_KEYS = ["fields", "mode", "showRatio", "compare", "highlight"];
+  var PRESET_KEYS = ["fields", "showRatio", "compare"];
 
   function presetSnapshot() {
     var p = {};
@@ -224,7 +222,7 @@
 
   function applyPreset(p) {
     settings.fields = p.fields.filter(function (k) { return FIELD_BY_KEY[k]; });
-    ["mode", "showRatio", "compare", "highlight"].forEach(function (k) {
+    ["showRatio", "compare"].forEach(function (k) {
       if (p[k] !== undefined) settings[k] = p[k];
     });
     settings.preset = p.name;
@@ -354,12 +352,6 @@
   }
 
   function syncControls() {
-    document.querySelectorAll(".seg").forEach(function (seg) {
-      var key = seg.getAttribute("data-setting");
-      seg.querySelectorAll("button").forEach(function (b) {
-        b.classList.toggle("active", b.getAttribute("data-value") === settings[key]);
-      });
-    });
     document.querySelectorAll("input[data-setting]").forEach(function (el) {
       el.checked = !!settings[el.getAttribute("data-setting")];
     });
@@ -375,7 +367,7 @@
 
   // ---------- 月報表 ----------
   function subColumns(f) {
-    var cols = [{ kind: "value", label: settings.mode === "sum" && f.agg !== "last" && !f.monthDiffOf ? "合計" : "人數" }];
+    var cols = [{ kind: "value", label: "人數" }];
     if (settings.showRatio && f.ratio) cols.push({ kind: "ratio", label: "佔比" });
     if (settings.compare && !f.fixed) cols.push({ kind: "delta", label: "較上月" });
     return cols;
@@ -452,8 +444,8 @@
     var prevRows = {};
     var missingPrev = false;
     selectedMonths.forEach(function (m) {
-      reports[m] = R.computeMonth(weeks, m, settings.mode);
-      var prev = R.computeMonth(weeks, R.prevMonthKey(m), settings.mode);
+      reports[m] = R.computeMonth(weeks, m);
+      var prev = R.computeMonth(weeks, R.prevMonthKey(m));
       if (!prev) missingPrev = true;
       var map = {};
       if (prev) prev.rows.forEach(function (r) { map[r.type + ":" + r.name] = r; });
@@ -480,18 +472,15 @@
         var row = byMonth[c.month][key];
         var f = c.field;
         var v = null;
-        var green = false;
         if (row && c.kind === "value") {
           v = row.values[f.key];
-          green = settings.highlight && R.isGreen(f, row.ratios[f.key]);
         } else if (row && c.kind === "ratio") {
           v = row.ratios[f.key];
-          green = settings.highlight && R.isGreen(f, v);
         } else if (row) {
           var p = prevRows[c.month][key];
           if (p && row.values[f.key] != null && p.values[f.key] != null) v = row.values[f.key] - p.values[f.key];
         }
-        return { kind: c.kind, field: f, value: v, green: green };
+        return { kind: c.kind, field: f, value: v };
       });
       return { row: baseRow, reported: reported, weekCount: weekCount, cells: cells };
     });
@@ -516,7 +505,7 @@
   function renderReport() {
     var built = buildReport();
     $("report-title").textContent = titleMonths() + " 雲嘉眾召會月報表";
-    $("report-badge").textContent = settings.mode === "sum" ? "合計" : "週平均";
+    $("report-badge").textContent = "週平均";
     $("report-sub").textContent = weeksText(built) +
       (settings.compare && built.missingPrev ? "　※ 前一個月沒有資料的月份無法比較增減" : "");
 
@@ -548,7 +537,6 @@
       r.cells.forEach(function (c, i) {
         var text = c.kind === "ratio" ? fmtPct(c.value) : c.kind === "delta" ? fmtDelta(c.value) : fmtNum(c.value, c.field);
         var cl = [];
-        if (c.green) cl.push("ok");
         if (c.kind === "delta" && c.value != null) cl.push(c.value > 0 ? "up" : c.value < 0 ? "down" : "");
         if (c.kind !== "value") cl.push("sub");
         var col = built.cols[i];
@@ -565,7 +553,7 @@
 
   function downloadExcel() {
     var built = buildReport();
-    var title = titleMonths() + " 雲嘉眾召會月報表（" + (settings.mode === "sum" ? "合計" : "週平均") + "）";
+    var title = titleMonths() + " 雲嘉眾召會月報表（週平均）";
     var aoa = [[title], [weeksText(built)], []];
     headerLevels(built.cols).forEach(function (lv, i) {
       var line = [i === 0 ? "大區／小區" : ""];
@@ -618,14 +606,6 @@
       renderAll();
     });
 
-    document.querySelectorAll(".seg button").forEach(function (b) {
-      b.addEventListener("click", function () {
-        settings[b.parentNode.getAttribute("data-setting")] = b.getAttribute("data-value");
-        saveSettings();
-        syncControls();
-        renderAll();
-      });
-    });
     document.querySelectorAll("input[data-setting]").forEach(function (el) {
       el.addEventListener("change", function () {
         settings[el.getAttribute("data-setting")] = el.checked;

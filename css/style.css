@@ -639,28 +639,8 @@ a { color: var(--accent); }
 
 .field-hint { font-weight: 400; margin-left: 0.4rem; }
 
-.seg {
-  display: inline-flex;
-  flex-wrap: wrap;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 0.2rem;
-  gap: 0.2rem;
-}
 
-.seg button {
-  background: transparent;
-  color: var(--text-muted);
-  padding: 0.45rem 0.9rem;
-  border-radius: 8px;
-}
 
-.seg button.active {
-  background: var(--surface);
-  color: var(--accent);
-  box-shadow: var(--shadow);
-}
 
 .check-row { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; }
 
@@ -727,11 +707,6 @@ tr.total-row td {
   border-top: 2px solid var(--text-muted);
 }
 
-td.ok {
-  background: var(--ok-soft) !important;
-  color: var(--ok);
-  font-weight: 700;
-}
 
 td.sub { color: var(--text-muted); font-size: 0.82rem; }
 td.up { color: var(--ok); }
@@ -760,7 +735,7 @@ footer.app-footer { max-width: 1180px; line-height: 1.7; }
   table { font-size: 9pt; }
   thead th, tbody td { padding: 2px 4px; border-bottom: 1px solid #ccc; color: #000; }
   .sticky-col { position: static; }
-  td.ok { background: #d9f2e1 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
 }
 
 /* 項目挑選 */

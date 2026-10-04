@@ -6,36 +6,36 @@
   // 週報分頁「顯示區」的欄位（第 5 列起每列一個小區）。
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
   // fixed: 固定值（基數、目標），不顯示較上月增減
-  // ratio: 佔比的分母欄位；green: 達標門檻（佔比 >= 門檻；gt 表示要「大於」）
+  // ratio: 佔比的分母欄位
   var FIELDS = [
     { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true },
-    { key: "sunday", label: "主日", col: "D", group: "召會生活", ratio: "base", green: 1, gt: true },
-    { key: "sundayYP", label: "主日青職", col: "F", group: "召會生活", ratio: "base", green: 0.15 },
-    { key: "prayer", label: "禱告", col: "H", group: "召會生活", ratio: "base", green: 1 / 3 },
+    { key: "sunday", label: "主日", col: "D", group: "召會生活", ratio: "base" },
+    { key: "sundayYP", label: "主日青職", col: "F", group: "召會生活", ratio: "base" },
+    { key: "prayer", label: "禱告", col: "H", group: "召會生活", ratio: "base" },
     { key: "groupCount", label: "排數", col: "J", group: "召會生活" },
-    { key: "smallGroup", label: "小排", col: "K", group: "召會生活", ratio: "base", green: 1 },
-    { key: "gospel", label: "福音出訪", col: "M", group: "召會生活", ratio: "base", green: 1 / 3 },
+    { key: "smallGroup", label: "小排", col: "K", group: "召會生活", ratio: "base" },
+    { key: "gospel", label: "福音出訪", col: "M", group: "召會生活", ratio: "base" },
     { key: "homeOut", label: "家聚出訪", col: "O", group: "召會生活" },
     { key: "homeIn", label: "家聚受訪", col: "P", group: "召會生活" },
-    { key: "home", label: "家聚會", group: "召會生活", sumOf: ["homeOut", "homeIn"], ratio: "base", green: 1.1, note: "出訪＋受訪" },
-    { key: "lifeStudy", label: "生命讀經", col: "R", group: "召會生活", ratio: "base", green: 0.7 },
-    { key: "morning", label: "晨興", col: "T", group: "召會生活", ratio: "base", green: 0.7 },
+    { key: "home", label: "家聚會", group: "召會生活", sumOf: ["homeOut", "homeIn"], ratio: "base", note: "出訪＋受訪" },
+    { key: "lifeStudy", label: "生命讀經", col: "R", group: "召會生活", ratio: "base" },
+    { key: "morning", label: "晨興", col: "T", group: "召會生活", ratio: "base" },
     { key: "baptGoal", label: "受浸目標", col: "V", group: "受浸", agg: "last", fixed: true },
     { key: "baptTotal", label: "受浸累計", col: "W", group: "受浸", agg: "last", ratio: "baptGoal" },
     { key: "baptMonth", label: "本月受浸", group: "受浸", monthDiffOf: "baptTotal", note: "本月底累計 − 上月底累計" },
 
     { key: "ypBase", label: "青職基數", col: "AA", group: "青職", agg: "last", fixed: true },
-    { key: "ypSunday", label: "青職主日", col: "AB", group: "青職", ratio: "ypBase", green: 1, gt: true },
-    { key: "ypHome", label: "青職家聚", col: "AC", group: "青職", ratio: "ypBase", green: 1.3, gt: true },
-    { key: "ypGroup", label: "青職排聚", col: "AD", group: "青職", ratio: "ypBase", green: 1.1, gt: true },
+    { key: "ypSunday", label: "青職主日", col: "AB", group: "青職", ratio: "ypBase" },
+    { key: "ypHome", label: "青職家聚", col: "AC", group: "青職", ratio: "ypBase" },
+    { key: "ypGroup", label: "青職排聚", col: "AD", group: "青職", ratio: "ypBase" },
     { key: "csBase", label: "大專基數", col: "AE", group: "大專", agg: "last", fixed: true },
-    { key: "csSunday", label: "大專主日", col: "AF", group: "大專", ratio: "csBase", green: 1, gt: true },
-    { key: "csHome", label: "大專家聚", col: "AG", group: "大專", ratio: "csBase", green: 1.3, gt: true },
-    { key: "csGroup", label: "大專排聚", col: "AH", group: "大專", ratio: "csBase", green: 1.1, gt: true },
+    { key: "csSunday", label: "大專主日", col: "AF", group: "大專", ratio: "csBase" },
+    { key: "csHome", label: "大專家聚", col: "AG", group: "大專", ratio: "csBase" },
+    { key: "csGroup", label: "大專排聚", col: "AH", group: "大專", ratio: "csBase" },
     { key: "hsBase", label: "國高中基數", col: "AI", group: "國高中", agg: "last", fixed: true },
-    { key: "hsSunday", label: "國高中主日", col: "AJ", group: "國高中", ratio: "hsBase", green: 1, gt: true },
-    { key: "hsHome", label: "國高中家聚", col: "AK", group: "國高中", ratio: "hsBase", green: 1.3, gt: true },
-    { key: "hsGroup", label: "國高中排聚", col: "AL", group: "國高中", ratio: "hsBase", green: 1.1, gt: true },
+    { key: "hsSunday", label: "國高中主日", col: "AJ", group: "國高中", ratio: "hsBase" },
+    { key: "hsHome", label: "國高中家聚", col: "AK", group: "國高中", ratio: "hsBase" },
+    { key: "hsGroup", label: "國高中排聚", col: "AL", group: "國高中", ratio: "hsBase" },
     // 以下細分欄位只在「數據輸入區」（AY 欄是小區名稱），用名稱對應
     { key: "jhSunday", label: "國中主日", col: "CA", input: true, group: "國中" },
     { key: "jhHomeOut", label: "國中家聚出訪", col: "CB", input: true, group: "國中" },
@@ -63,9 +63,9 @@
 
     { key: "chRoster", label: "兒童名冊", col: "AP", group: "兒童", agg: "last" },
     { key: "chBase", label: "兒童基數", col: "AQ", group: "兒童", agg: "last", fixed: true },
-    { key: "chSunday", label: "兒童主日", col: "AR", group: "兒童", ratio: "chBase", green: 1, gt: true },
+    { key: "chSunday", label: "兒童主日", col: "AR", group: "兒童", ratio: "chBase" },
     { key: "chGroupCount", label: "兒童排數", col: "AS", group: "兒童" },
-    { key: "chAll", label: "兒童排兒童全部", col: "AT", group: "兒童", ratio: "chBase", green: 1.5 },
+    { key: "chAll", label: "兒童排兒童全部", col: "AT", group: "兒童", ratio: "chBase" },
     { key: "chGospel", label: "兒童排福音兒童", col: "AU", group: "兒童" },
     { key: "chAdults", label: "兒童排大人全部", col: "AV", group: "兒童" },
     { key: "chParents", label: "兒童排福音家長", col: "AW", group: "兒童" }
@@ -244,7 +244,7 @@
     return a + b;
   }
 
-  function aggregateUnit(mweeks, name, mode) {
+  function aggregateUnit(mweeks, name) {
     var out = {};
     var reported = 0;
     var unitWeeks = mweeks.map(function (w) {
@@ -259,7 +259,7 @@
       if (f.agg === "last") { out[f.key] = vals[vals.length - 1]; return; }
       var sum = 0;
       vals.forEach(function (x) { sum += x; });
-      out[f.key] = mode === "sum" ? sum : sum / vals.length;
+      out[f.key] = sum / vals.length;
     });
     return { values: out, reported: reported };
   }
@@ -301,22 +301,22 @@
   }
 
   // 只計算原始欄位（不含衍生欄），給 computeMonth 用來取上月底累計
-  function rawMonth(weeks, month, mode, order) {
+  function rawMonth(weeks, month, order) {
     var mweeks = weeks.filter(function (w) { return w.month === month && w.hasData; });
     if (!mweeks.length) return null;
     var byUnit = {};
     order.forEach(function (g) {
-      g.units.forEach(function (name) { byUnit[name] = aggregateUnit(mweeks, name, mode); });
+      g.units.forEach(function (name) { byUnit[name] = aggregateUnit(mweeks, name); });
     });
     return { weeks: mweeks, byUnit: byUnit };
   }
 
-  // 計算某月的月報表。mode: "avg"（週平均）| "sum"（合計）
-  function computeMonth(weeks, month, mode) {
+  // 計算某月的月報表（各項為當月各週平均）
+  function computeMonth(weeks, month) {
     var order = unitOrder(weeks);
-    var cur = rawMonth(weeks, month, mode, order);
+    var cur = rawMonth(weeks, month, order);
     if (!cur) return null;
-    var prev = rawMonth(weeks, prevMonthKey(month), mode, order);
+    var prev = rawMonth(weeks, prevMonthKey(month), order);
     var rows = [];
     var regionTotals = [];
     var prevRegionTotals = [];
@@ -350,15 +350,9 @@
     rows.push({ type: "total", region: "", name: TOTAL_NAME, values: tv, ratios: ratiosOf(tv) });
     return {
       month: month,
-      mode: mode,
       weeks: cur.weeks.map(function (w) { return w.date; }),
       rows: rows
     };
-  }
-
-  function isGreen(field, ratio) {
-    if (field.green == null || ratio == null) return false;
-    return field.gt ? ratio > field.green + 1e-9 : ratio >= field.green - 1e-9;
   }
 
   var api = {
@@ -370,8 +364,7 @@
     unitOrder: unitOrder,
     monthsWithData: monthsWithData,
     prevMonthKey: prevMonthKey,
-    computeMonth: computeMonth,
-    isGreen: isGreen
+    computeMonth: computeMonth
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = api;
