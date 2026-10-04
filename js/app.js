@@ -402,12 +402,17 @@
     return selectedMonths.map(monthLabel).join("、");
   }
 
-  // 欄位：項目 → 月份 → 人數／佔比／較上月。固定值（基數、目標）只放一欄，取最後選取月份。
+  // 欄位：固定值（基數、目標）放最前面、只一欄（取最後選取月份）；
+  // 其餘依 月份 → 項目 → 人數／佔比／較上月 排列，一個月全部列完再換下個月。
   function buildColumns(fields) {
     var last = selectedMonths[selectedMonths.length - 1];
     var cols = [];
     fields.forEach(function (f) {
-      (f.fixed ? [last] : selectedMonths).forEach(function (m) {
+      if (f.fixed) cols.push({ field: f, month: last, kind: "value", label: "人數", fixed: true });
+    });
+    selectedMonths.forEach(function (m) {
+      fields.forEach(function (f) {
+        if (f.fixed) return;
         subColumns(f).forEach(function (c) {
           cols.push({ field: f, month: m, kind: c.kind, label: c.label });
         });
@@ -416,27 +421,48 @@
     return cols;
   }
 
-  // 表頭各層：[[{label, span}]]；多月時加月份層，有佔比／增減時加小標層
-  function headerLevels(cols) {
-    var levels = [];
-    function group(keyFn, labelFn) {
-      var row = [];
-      cols.forEach(function (c) {
-        var k = keyFn(c);
-        var lastCell = row[row.length - 1];
-        if (lastCell && lastCell.key === k) lastCell.span++;
-        else row.push({ key: k, label: labelFn(c), span: 1 });
-      });
-      return row;
+  // 表頭：回傳 { rows: [[{label, colspan, rowspan, cls}]], grid: 給 Excel 用的二維文字陣列 }
+  function headerLayout(cols) {
+    var multi = selectedMonths.length > 1;
+    var hasKind = cols.some(function (c) { return c.kind !== "value"; });
+    var monthLv = multi ? 0 : -1;
+    var fieldLv = multi ? 1 : 0;
+    var kindLv = hasKind ? fieldLv + 1 : -1;
+    var depth = fieldLv + 1 + (hasKind ? 1 : 0);
+    var rows = [];
+    var grid = [];
+    for (var i = 0; i < depth; i++) { rows.push([]); grid.push([i === 0 ? "召會" : ""]); }
+    rows[0].push({ label: "召會", rowspan: depth, colspan: 1, cls: "sticky-col" });
+
+    function put(level, label, span, rowspan, cls) {
+      rows[level].push({ label: label, colspan: span, rowspan: rowspan || 1, cls: cls || "" });
+      for (var r = level; r < level + (rowspan || 1); r++) {
+        for (var k = 0; k < span; k++) grid[r].push(r === level && k === 0 ? label : "");
+      }
     }
-    levels.push(group(function (c) { return c.field.key; }, function (c) { return c.field.label; }));
-    if (selectedMonths.length > 1) {
-      levels.push(group(function (c) { return c.field.key + "|" + c.month; }, function (c) { return monthShort(c.month); }));
+
+    var i2 = 0;
+    while (i2 < cols.length) {
+      var c = cols[i2];
+      if (c.fixed) { put(0, c.field.label, 1, depth); i2++; continue; }
+      var j = i2;
+      while (j < cols.length && !cols[j].fixed && cols[j].month === c.month) j++;
+      if (multi) put(monthLv, monthShort(c.month), j - i2, 1, "group-th month-th");
+      var k = i2;
+      while (k < j) {
+        var e = k;
+        while (e < j && cols[e].field === cols[k].field) e++;
+        var lastLevel = kindLv < 0;
+        put(fieldLv, cols[k].field.label, e - k, 1, lastLevel ? "" : "group-th");
+        if (kindLv >= 0) {
+          for (var x = k; x < e; x++) put(kindLv, cols[x].label === "佔比" ? "佔比" : cols[x].label, 1);
+        }
+        k = e;
+      }
+      i2 = j;
     }
-    if (cols.some(function (c) { return c.kind !== "value"; })) {
-      levels.push(cols.map(function (c) { return { label: c.label, span: 1 }; }));
-    }
-    return levels;
+    // grid 的列已依層級逐一填入；rowspan 的格子在下層也補了空白，欄數一致
+    return { rows: rows, grid: grid };
   }
 
   function buildReport() {
@@ -519,15 +545,12 @@
     $("report-empty").style.display = "none";
     $("download-btn").disabled = false;
 
-    var levels = headerLevels(built.cols);
-    var head = levels.map(function (lv, i) {
-      var html = "<tr>";
-      if (i === 0) html += '<th rowspan="' + levels.length + '" class="sticky-col">大區／小區</th>';
-      lv.forEach(function (cell) {
-        var cls = i < levels.length - 1 ? ' class="group-th"' : "";
-        html += "<th" + cls + (cell.span > 1 ? ' colspan="' + cell.span + '"' : "") + ">" + escapeHtml(cell.label) + "</th>";
-      });
-      return html + "</tr>";
+    var head = headerLayout(built.cols).rows.map(function (lv) {
+      return "<tr>" + lv.map(function (cell) {
+        return "<th" + (cell.cls ? ' class="' + cell.cls + '"' : "") +
+          (cell.colspan > 1 ? ' colspan="' + cell.colspan + '"' : "") +
+          (cell.rowspan > 1 ? ' rowspan="' + cell.rowspan + '"' : "") + ">" + escapeHtml(cell.label) + "</th>";
+      }).join("") + "</tr>";
     }).join("");
 
     var body = built.rows.map(function (r) {
@@ -541,8 +564,8 @@
         if (c.kind !== "value") cl.push("sub");
         var col = built.cols[i];
         var next = built.cols[i + 1];
-        if (next && next.field !== col.field) cl.push("field-end");
-        else if (selectedMonths.length > 1 && next && next.month !== col.month) cl.push("month-end");
+        if (next && (next.month !== col.month || !!next.fixed !== !!col.fixed)) cl.push("month-end");
+        else if (next && next.field !== col.field) cl.push("field-end");
         html += '<td class="' + cl.join(" ") + '">' + text + "</td>";
       });
       return html + "</tr>";
@@ -555,13 +578,8 @@
     var built = buildReport();
     var title = titleMonths() + " 雲嘉眾召會月報表（週平均）";
     var aoa = [[title], [weeksText(built)], []];
-    headerLevels(built.cols).forEach(function (lv, i) {
-      var line = [i === 0 ? "大區／小區" : ""];
-      lv.forEach(function (cell) {
-        line.push(cell.label === "佔比" ? "佔比(%)" : cell.label);
-        for (var k = 1; k < cell.span; k++) line.push("");
-      });
-      aoa.push(line);
+    headerLayout(built.cols).grid.forEach(function (line) {
+      aoa.push(line.map(function (t) { return t === "佔比" ? "佔比(%)" : t; }));
     });
     built.rows.forEach(function (r) {
       var line = [rowLabel(r)];
