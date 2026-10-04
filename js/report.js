@@ -5,7 +5,7 @@
 
   // 週報分頁「顯示區」的欄位（第 5 列起每列一個小區）。
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
-  // fixed: 固定值（基數、目標、兒童排數），只放一欄、不分月份、不顯示較上月增減
+  // fixed: 固定值（基數、目標、兒童排數、得少人數），只放一欄、不分月份、不顯示較上月增減
   // ratio: 佔比的分母欄位
   var FIELDS = [
     { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true },
@@ -48,10 +48,10 @@
     { key: "shHome", label: "高中家聚", group: "高中", sumOf: ["shHomeOut", "shHomeIn"], note: "出訪＋受訪" },
     { key: "shGroup", label: "高中排聚", col: "CH", input: true, group: "高中" },
 
-    { key: "drCount", label: "得少人數", col: "AM", group: "得少" },
-    { key: "drCountEs", label: "得少人數・小學", col: "CI", input: true, group: "得少" },
-    { key: "drCountJh", label: "得少人數・國中", col: "CJ", input: true, group: "得少" },
-    { key: "drCountSh", label: "得少人數・高中", col: "CK", input: true, group: "得少" },
+    { key: "drCount", label: "得少人數", col: "AM", group: "得少", agg: "last", fixed: true },
+    { key: "drCountEs", label: "得少人數・小學", col: "CI", input: true, group: "得少", agg: "last", fixed: true },
+    { key: "drCountJh", label: "得少人數・國中", col: "CJ", input: true, group: "得少", agg: "last", fixed: true },
+    { key: "drCountSh", label: "得少人數・高中", col: "CK", input: true, group: "得少", agg: "last", fixed: true },
     { key: "drSunday", label: "得少主日", col: "AN", group: "得少" },
     { key: "drSundayEs", label: "得少主日・小學", col: "CL", input: true, group: "得少" },
     { key: "drSundayJh", label: "得少主日・國中", col: "CM", input: true, group: "得少" },
