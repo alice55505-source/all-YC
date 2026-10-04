@@ -368,7 +368,7 @@
   // ---------- 月報表 ----------
   function subColumns(f) {
     var cols = [{ kind: "value", label: "人數" }];
-    if (settings.showRatio && f.ratio) cols.push({ kind: "ratio", label: "佔比" });
+    if (settings.showRatio && f.ratio) cols.push({ kind: "ratio", label: "佔基數比" });
     if (settings.compare && !f.fixed) cols.push({ kind: "delta", label: "較上月" });
     return cols;
   }
@@ -418,7 +418,8 @@
         return order.indexOf(x.cat || "#" + x.key) - order.indexOf(y.cat || "#" + y.key);
       });
     }
-    fields = groupByCat(fields.filter(function (f) { return f.fixed; }))
+    fields = fields.filter(function (f) { return f.baseLabel; })
+      .concat(groupByCat(fields.filter(function (f) { return f.fixed && !f.baseLabel; })))
       .concat(groupByCat(fields.filter(function (f) { return !f.fixed; })));
     var cols = [];
     fields.forEach(function (f) {
@@ -441,13 +442,21 @@
   function headerLayout(cols) {
     var normal = cols.filter(function (c) { return !c.fixed; });
     var levels = [];
+    var hasBase = cols.some(function (c) { return c.field.baseLabel; });
     if (selectedMonths.length > 1) levels.push("month");
-    if (cols.some(function (c) { return c.field.cat; })) levels.push("cat");
+    if (cols.some(function (c) { return c.field.cat; }) || (hasBase && !levels.length)) levels.push("cat");
+    var baseLv = levels[0];
     levels.push("field");
     if (normal.some(function (c) { return c.kind !== "value"; })) levels.push("kind");
     var depth = levels.length;
 
     function part(c, lv) {
+      // 各種基數統一放在最上層的「基數」底下
+      if (c.field.baseLabel) {
+        if (lv === baseLv) return { key: "BASE", label: "基數", cls: "group-th cat-th" };
+        if (lv === "field") return { key: c.field.key, label: c.field.baseLabel, cls: "" };
+        return null;
+      }
       if (lv === "month") return c.fixed ? null : { key: c.month, label: monthShort(c.month), cls: "group-th month-th" };
       if (lv === "cat") return c.field.cat ? { key: c.field.cat, label: c.field.cat, cls: "group-th cat-th" } : null;
       if (lv === "field") return { key: c.field.key, label: c.field.cat ? c.field.short : c.field.label, cls: "" };
@@ -615,7 +624,7 @@
     var title = titleMonths() + " 雲嘉眾召會月報表（週平均）";
     var aoa = [[title], [weeksText(built)], []];
     headerLayout(built.cols).grid.forEach(function (line) {
-      aoa.push(line.map(function (t) { return t === "佔比" ? "佔比(%)" : t; }));
+      aoa.push(line.map(function (t) { return t === "佔基數比" ? "佔基數比(%)" : t; }));
     });
     built.rows.forEach(function (r) {
       var line = [rowLabel(r)];

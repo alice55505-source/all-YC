@@ -6,10 +6,11 @@
   // 週報分頁「顯示區」的欄位（第 5 列起每列一個小區）。
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
   // cat / short: 報表表頭的大分類與分類底下的短名稱
+  // baseLabel: 各種基數在報表表頭統一歸在「基數」底下時的名稱
   // fixed: 固定值（基數、目標、兒童排數、得少人數），只放一欄、不分月份、不顯示較上月增減
   // ratio: 佔比的分母欄位
   var FIELDS = [
-    { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true },
+    { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true, baseLabel: "全召會" },
     { key: "sunday", label: "主日", col: "D", group: "召會生活", ratio: "base" },
     { key: "sundayYP", label: "主日青職", col: "F", group: "召會生活", ratio: "base" },
     { key: "prayer", label: "禱告", col: "H", group: "召會生活", ratio: "base" },
@@ -25,15 +26,15 @@
     { key: "baptTotal", label: "受浸累計", col: "W", group: "受浸", agg: "last", ratio: "baptGoal" },
     { key: "baptMonth", label: "本月受浸", group: "受浸", monthDiffOf: "baptTotal", note: "本月底累計 − 上月底累計" },
 
-    { key: "ypBase", label: "青職基數", cat: "青職", short: "基數", col: "AA", group: "青職", agg: "last", fixed: true },
+    { key: "ypBase", label: "青職基數", cat: "青職", short: "基數", col: "AA", group: "青職", agg: "last", fixed: true, baseLabel: "青職" },
     { key: "ypSunday", label: "青職主日", cat: "青職", short: "主日", col: "AB", group: "青職", ratio: "ypBase" },
     { key: "ypHome", label: "青職家聚", cat: "青職", short: "家聚", col: "AC", group: "青職", ratio: "ypBase" },
     { key: "ypGroup", label: "青職排聚", cat: "青職", short: "排聚", col: "AD", group: "青職", ratio: "ypBase" },
-    { key: "csBase", label: "大專基數", cat: "大專", short: "基數", col: "AE", group: "大專", agg: "last", fixed: true },
+    { key: "csBase", label: "大專基數", cat: "大專", short: "基數", col: "AE", group: "大專", agg: "last", fixed: true, baseLabel: "大專" },
     { key: "csSunday", label: "大專主日", cat: "大專", short: "主日", col: "AF", group: "大專", ratio: "csBase" },
     { key: "csHome", label: "大專家聚", cat: "大專", short: "家聚", col: "AG", group: "大專", ratio: "csBase" },
     { key: "csGroup", label: "大專排聚", cat: "大專", short: "排聚", col: "AH", group: "大專", ratio: "csBase" },
-    { key: "hsBase", label: "國高中基數", cat: "國高中", short: "基數", col: "AI", group: "國高中", agg: "last", fixed: true },
+    { key: "hsBase", label: "國高中基數", cat: "國高中", short: "基數", col: "AI", group: "國高中", agg: "last", fixed: true, baseLabel: "國高中" },
     { key: "hsSunday", label: "國高中主日", cat: "國高中", short: "主日", col: "AJ", group: "國高中", ratio: "hsBase" },
     { key: "hsHome", label: "國高中家聚", cat: "國高中", short: "家聚", col: "AK", group: "國高中", ratio: "hsBase" },
     { key: "hsGroup", label: "國高中排聚", cat: "國高中", short: "排聚", col: "AL", group: "國高中", ratio: "hsBase" },
@@ -63,7 +64,7 @@
     { key: "drHomeSh", label: "得少受訪・高中", cat: "得少", short: "受訪・高中", col: "CQ", input: true, group: "得少" },
 
     { key: "chRoster", label: "兒童名冊", cat: "兒童主日", short: "名冊", col: "AP", group: "兒童", agg: "last" },
-    { key: "chBase", label: "兒童基數", cat: "兒童主日", short: "基數", col: "AQ", group: "兒童", agg: "last", fixed: true },
+    { key: "chBase", label: "兒童基數", cat: "兒童主日", short: "基數", col: "AQ", group: "兒童", agg: "last", fixed: true, baseLabel: "兒童" },
     { key: "chSunday", label: "兒童主日", cat: "兒童主日", short: "主日", col: "AR", group: "兒童", ratio: "chBase" },
     { key: "chGroupCount", label: "兒童排數", cat: "兒童排", short: "排數", col: "AS", group: "兒童", agg: "last", fixed: true },
     { key: "chAll", label: "兒童排兒童全部", cat: "兒童排", short: "兒童全部", col: "AT", group: "兒童", ratio: "chBase" },
