@@ -26,7 +26,6 @@
 
   var DEFAULT_SETTINGS = {
     mode: "avg",
-    level: "unit",
     showRatio: true,
     compare: false,
     highlight: true,
@@ -213,7 +212,7 @@
 
   function applyPreset(p) {
     settings.fields = p.fields.filter(function (k) { return FIELD_BY_KEY[k]; });
-    ["mode", "level", "showRatio", "compare", "highlight"].forEach(function (k) {
+    ["mode", "showRatio", "compare", "highlight"].forEach(function (k) {
       if (p[k] !== undefined) settings[k] = p[k];
     });
     saveSettings();
@@ -272,18 +271,14 @@
         if (pending) out.push(pending);
         pending = row;
       } else if (row.type === "unit") {
-        if (settings.level === "unit") out.push(row);
+        out.push(row);
       } else {
         if (pending) out.push(pending);
         pending = null;
         out.push(row);
       }
     });
-    return out.filter(function (row) {
-      if (settings.level === "total") return row.type === "total";
-      if (settings.level === "region") return row.type !== "unit";
-      return true;
-    });
+    return out;
   }
 
   function buildReport() {
@@ -470,7 +465,7 @@
       if (!name) return;
       var list = userPresets().filter(function (p) { return p.name !== name; });
       list.push({
-        name: name, fields: settings.fields.slice(), mode: settings.mode, level: settings.level,
+        name: name, fields: settings.fields.slice(), mode: settings.mode,
         showRatio: settings.showRatio, compare: settings.compare, highlight: settings.highlight
       });
       saveJson(PRESETS_KEY, list);
