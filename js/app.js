@@ -740,7 +740,7 @@
       }
     });
     $("preset-save-btn").addEventListener("click", function () {
-      var name = (prompt("新範本名稱（例如：長老月會用）") || "").trim();
+      var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();
       if (!name) return;
       var list = userPresets();
       if (findPreset(name) && !confirm("已有範本「" + name + "」，要覆蓋嗎？")) return;
