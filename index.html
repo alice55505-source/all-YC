@@ -77,8 +77,15 @@
     </div>
 
     <div class="field">
-      <label>項目 <span class="field-hint">勾選要放進月報表的欄位</span></label>
-      <div id="field-picker"></div>
+      <label>項目 <span class="field-hint" id="picked-count"></span></label>
+      <div class="picked-bar">
+        <div class="chip-grid" id="picked-chips"></div>
+        <button class="btn-secondary" id="picker-toggle">＋ 編輯項目</button>
+      </div>
+      <div class="picker-panel" id="field-picker" hidden>
+        <div class="picker-tabs" id="picker-tabs"></div>
+        <div id="picker-body"></div>
+      </div>
     </div>
   </section>
 

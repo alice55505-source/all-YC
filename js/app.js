@@ -220,19 +220,109 @@
     renderAll();
   }
 
+  // 項目挑選面板：分頁顯示，青年人與得少用「對象 × 項目」矩陣
+  var PICKER_TABS = [
+    {
+      name: "召會生活",
+      chips: [["base", "基數"], ["sunday", "主日"], ["sundayYP", "主日青職"], ["prayer", "禱告"], ["groupCount", "排數"],
+        ["smallGroup", "小排"], ["gospel", "福音出訪"], ["home", "家聚會"], ["homeOut", "家聚出訪"], ["homeIn", "家聚受訪"],
+        ["lifeStudy", "生命讀經"], ["morning", "晨興"]]
+    },
+    { name: "受浸", chips: [["baptMonth", "本月受浸"], ["baptTotal", "受浸累計"], ["baptGoal", "受浸目標"]] },
+    {
+      name: "青年人",
+      cols: ["基數", "主日", "家聚", "出訪", "受訪", "排聚"],
+      rows: [
+        ["青職", ["ypBase", "ypSunday", "ypHome", null, null, "ypGroup"]],
+        ["大專", ["csBase", "csSunday", "csHome", null, null, "csGroup"]],
+        ["國高中", ["hsBase", "hsSunday", "hsHome", null, null, "hsGroup"]],
+        ["國中", [null, "jhSunday", "jhHome", "jhHomeOut", "jhHomeIn", "jhGroup"]],
+        ["高中", [null, "shSunday", "shHome", "shHomeOut", "shHomeIn", "shGroup"]]
+      ]
+    },
+    {
+      name: "得少",
+      cols: ["人數", "主日", "受訪"],
+      rows: [
+        ["合計", ["drCount", "drSunday", "drHome"]],
+        ["小學", ["drCountEs", "drSundayEs", "drHomeEs"]],
+        ["國中", ["drCountJh", "drSundayJh", "drHomeJh"]],
+        ["高中", ["drCountSh", "drSundaySh", "drHomeSh"]]
+      ]
+    },
+    {
+      name: "兒童",
+      chips: [["chRoster", "名冊"], ["chBase", "基數"], ["chSunday", "主日"], ["chGroupCount", "排數"],
+        ["chAll", "兒童排・兒童全部"], ["chGospel", "兒童排・福音兒童"], ["chAdults", "兒童排・大人全部"], ["chParents", "兒童排・福音家長"]]
+    }
+  ];
+  var pickerTab = 0;
+
+  function tabKeys(tab) {
+    if (tab.chips) return tab.chips.map(function (c) { return c[0]; });
+    var keys = [];
+    tab.rows.forEach(function (r) { r[1].forEach(function (k) { if (k) keys.push(k); }); });
+    return keys;
+  }
+
+  function isOn(key) { return settings.fields.indexOf(key) >= 0; }
+
   function renderFieldPicker() {
-    var html = "";
-    R.GROUPS.forEach(function (g) {
-      var fs = FIELDS.filter(function (f) { return f.group === g; });
-      html += '<div class="picker-group"><div class="picker-head"><span>' + g + '</span>' +
-        '<button class="link-btn" data-group-toggle="' + g + '">全選／全不選</button></div><div class="chip-grid">';
-      fs.forEach(function (f) {
-        html += '<label class="chip-check" title="' + escapeHtml(f.note || "") + '"><input type="checkbox" data-field="' + f.key + '" />' +
-          escapeHtml(f.label) + "</label>";
+    $("picker-tabs").innerHTML = PICKER_TABS.map(function (t, i) {
+      var n = tabKeys(t).filter(isOn).length;
+      return '<button class="picker-tab' + (i === pickerTab ? " active" : "") + '" data-tab="' + i + '">' + t.name +
+        (n ? '<span class="tab-count">' + n + "</span>" : "") + "</button>";
+    }).join("");
+
+    var tab = PICKER_TABS[pickerTab];
+    var html = '<div class="picker-tools"><button class="link-btn" data-tab-all="1">本頁全選／全不選</button></div>';
+    if (tab.chips) {
+      html += '<div class="chip-grid">';
+      tab.chips.forEach(function (c) {
+        var f = FIELD_BY_KEY[c[0]];
+        html += '<label class="chip-check' + (isOn(c[0]) ? " on" : "") + '" title="' + escapeHtml(f.note || "") + '">' +
+          '<input type="checkbox" data-field="' + c[0] + '"' + (isOn(c[0]) ? " checked" : "") + " />" + escapeHtml(c[1]) + "</label>";
       });
-      html += "</div></div>";
-    });
-    $("field-picker").innerHTML = html;
+      html += "</div>";
+    } else {
+      html += '<div class="table-scroll"><table class="matrix"><thead><tr><th></th>' +
+        tab.cols.map(function (c, ci) { return '<th><button class="link-btn" data-col="' + ci + '">' + c + "</button></th>"; }).join("") +
+        "</tr></thead><tbody>";
+      tab.rows.forEach(function (r, ri) {
+        html += '<tr><th><button class="link-btn" data-row="' + ri + '">' + r[0] + "</button></th>";
+        r[1].forEach(function (k) {
+          html += k
+            ? '<td><label class="matrix-cell' + (isOn(k) ? " on" : "") + '"><input type="checkbox" data-field="' + k + '"' +
+              (isOn(k) ? " checked" : "") + " /></label></td>"
+            : '<td class="na">—</td>';
+        });
+        html += "</tr>";
+      });
+      html += "</tbody></table></div><p class=\"modal-hint\">點列名或欄名可整列／整欄勾選</p>";
+    }
+    $("picker-body").innerHTML = html;
+  }
+
+  function renderPicked() {
+    var fields = selectedFields();
+    $("picked-count").textContent = fields.length ? "已選 " + fields.length + " 項" : "尚未選擇";
+    $("picked-chips").innerHTML = fields.map(function (f) {
+      return '<span class="picked-chip">' + escapeHtml(f.label) +
+        '<button data-remove="' + f.key + '" title="移除" aria-label="移除 ' + escapeHtml(f.label) + '">×</button></span>';
+    }).join("");
+  }
+
+  function toggleKeys(keys) {
+    var allOn = keys.every(isOn);
+    settings.fields = settings.fields.filter(function (k) { return keys.indexOf(k) < 0; });
+    if (!allOn) settings.fields = settings.fields.concat(keys);
+    fieldsChanged();
+  }
+
+  function fieldsChanged() {
+    saveSettings();
+    syncControls();
+    renderAll();
   }
 
   function syncControls() {
@@ -245,10 +335,8 @@
     document.querySelectorAll("input[data-setting]").forEach(function (el) {
       el.checked = !!settings[el.getAttribute("data-setting")];
     });
-    document.querySelectorAll("input[data-field]").forEach(function (el) {
-      el.checked = settings.fields.indexOf(el.getAttribute("data-field")) >= 0;
-      el.parentNode.classList.toggle("on", el.checked);
-    });
+    renderFieldPicker();
+    renderPicked();
   }
 
   function selectedFields() {
@@ -431,26 +519,40 @@
       });
     });
 
+    $("picker-toggle").addEventListener("click", function () {
+      var panel = $("field-picker");
+      panel.hidden = !panel.hidden;
+      $("picker-toggle").textContent = panel.hidden ? "＋ 編輯項目" : "完成";
+    });
+    $("picked-chips").addEventListener("click", function (e) {
+      var key = e.target.getAttribute("data-remove");
+      if (!key) return;
+      settings.fields = settings.fields.filter(function (k) { return k !== key; });
+      fieldsChanged();
+    });
     $("field-picker").addEventListener("change", function (e) {
       var key = e.target.getAttribute("data-field");
       if (!key) return;
       var set = settings.fields.filter(function (k) { return k !== key; });
       if (e.target.checked) set.push(key);
       settings.fields = set;
-      saveSettings();
-      syncControls();
-      renderAll();
+      fieldsChanged();
     });
     $("field-picker").addEventListener("click", function (e) {
-      var g = e.target.getAttribute("data-group-toggle");
-      if (!g) return;
-      var keys = FIELDS.filter(function (f) { return f.group === g; }).map(function (f) { return f.key; });
-      var allOn = keys.every(function (k) { return settings.fields.indexOf(k) >= 0; });
-      settings.fields = settings.fields.filter(function (k) { return keys.indexOf(k) < 0; });
-      if (!allOn) settings.fields = settings.fields.concat(keys);
-      saveSettings();
-      syncControls();
-      renderAll();
+      var t = e.target.closest("button");
+      if (!t) return;
+      var tab = PICKER_TABS[pickerTab];
+      if (t.hasAttribute("data-tab")) {
+        pickerTab = +t.getAttribute("data-tab");
+        renderFieldPicker();
+      } else if (t.hasAttribute("data-tab-all")) {
+        toggleKeys(tabKeys(tab));
+      } else if (t.hasAttribute("data-row")) {
+        toggleKeys(tab.rows[+t.getAttribute("data-row")][1].filter(Boolean));
+      } else if (t.hasAttribute("data-col")) {
+        var ci = +t.getAttribute("data-col");
+        toggleKeys(tab.rows.map(function (r) { return r[1][ci]; }).filter(Boolean));
+      }
     });
 
     $("preset-select").addEventListener("change", function (e) {
@@ -490,7 +592,6 @@
   }
 
   // ---------- 啟動 ----------
-  renderFieldPicker();
   renderPresetSelect();
   syncControls();
   bindEvents();
