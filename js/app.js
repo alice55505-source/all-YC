@@ -176,13 +176,8 @@
   // ---------- 資料載入 ----------
   function setSource(info) {
     var link = $("source-link");
-    if (info.sheetId) {
-      link.href = "https://docs.google.com/spreadsheets/d/" + info.sheetId + "/edit";
-      link.textContent = info.title || "Google 試算表";
-    } else {
-      link.removeAttribute("href");
-      link.textContent = info.title || "上傳的檔案";
-    }
+    if (info.sheetId) link.href = "https://docs.google.com/spreadsheets/d/" + info.sheetId + "/edit";
+    link.textContent = info.title || "Google 試算表";
     $("source-time").textContent = info.fetchedAt
       ? "更新時間 " + new Date(info.fetchedAt).toLocaleString("zh-TW", { hour12: false })
       : "";
@@ -239,21 +234,6 @@
         showStatus("抓取失敗：" + e.message + (weeks.length ? "（目前顯示的是上次抓到的資料）" : ""), "error");
       })
       .then(function () { $("refresh-btn").disabled = false; });
-  }
-
-  function loadFile(file) {
-    var reader = new FileReader();
-    reader.onload = function () {
-      try {
-        var parsed = parseBuffer(new Uint8Array(reader.result));
-        setSource({ title: "上傳的檔案：" + file.name, fetchedAt: new Date().toISOString() });
-        useWeeks(parsed);
-        showStatus("已改用上傳的檔案。按「重新抓取」可回到 Google 試算表。", "ok");
-      } catch (e) {
-        showStatus("檔案解析失敗：" + e.message, "error");
-      }
-    };
-    reader.readAsArrayBuffer(file);
   }
 
   // ---------- 設定區 ----------
@@ -741,10 +721,6 @@
   // ---------- 事件 ----------
   function bindEvents() {
     $("refresh-btn").addEventListener("click", function () { fetchSheet(true); });
-    $("file-input").addEventListener("change", function (e) {
-      if (e.target.files[0]) loadFile(e.target.files[0]);
-      e.target.value = "";
-    });
     $("month-picker").addEventListener("change", function (e) {
       var m = e.target.getAttribute("data-month");
       if (!m) return;

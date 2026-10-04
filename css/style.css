@@ -609,16 +609,9 @@ a { color: var(--accent); }
 
 .source-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
 
-.source-actions button, .file-btn {
+.source-actions button {
   font-size: 0.82rem;
   padding: 0.4rem 0.7rem;
-}
-
-.file-btn {
-  display: inline-block;
-  font-weight: 600;
-  border-radius: 10px;
-  cursor: pointer;
 }
 
 #status-msg { margin: -0.5rem 0 1.25rem; }
