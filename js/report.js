@@ -7,14 +7,14 @@
   // agg: avg = 當月各週平均（或合計）；last = 取當月最後一週（基數、名冊、累計類）
   // cat / short: 報表表頭的大分類與分類底下的短名稱
   // baseLabel: 各種基數在報表表頭統一歸在「基數」底下時的名稱
-  // fixed: 固定值（基數、目標、兒童排數、得少人數），只放一欄、不分月份、不顯示較上月增減
+  // fixed: 固定值（基數、目標、排數、兒童排數、得少人數），只放一欄、不分月份、不顯示較上月增減
   // ratio: 佔比的分母欄位
   var FIELDS = [
     { key: "base", label: "二六基數", col: "C", group: "召會生活", agg: "last", fixed: true, baseLabel: "全召會" },
     { key: "sunday", label: "主日", col: "D", group: "召會生活", ratio: "base" },
     { key: "sundayYP", label: "主日青職", col: "F", group: "召會生活", ratio: "base" },
     { key: "prayer", label: "禱告", col: "H", group: "召會生活", ratio: "base" },
-    { key: "groupCount", label: "排數", col: "J", group: "召會生活" },
+    { key: "groupCount", label: "排數", col: "J", group: "召會生活", agg: "last", fixed: true },
     { key: "smallGroup", label: "小排", col: "K", group: "召會生活", ratio: "base" },
     { key: "gospel", label: "福音出訪", col: "M", group: "召會生活", ratio: "base" },
     { key: "homeOut", label: "家聚出訪", col: "O", group: "召會生活" },
