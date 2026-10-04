@@ -75,5 +75,6 @@ js/app.js                畫面、設定、範本、匯出
 js/xlsx.core.min.js      SheetJS（Apache-2.0，見 vendor/xlsx/LICENSE）
 functions/api/sheet.js   GET /api/sheet：代抓 Google 試算表
 functions/api/presets/   共用範本 API（GET 列表、PUT 存檔、PATCH 改名、DELETE 刪除）
-manifest.json, sw.js     PWA
+manifest.json, sw.js     PWA（可加入主畫面）
+icons/                   App 圖示（一般、maskable、iOS apple-touch-icon、favicon）
 ```

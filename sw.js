@@ -1,4 +1,4 @@
-const CACHE_NAME = "yc-monthly-v1";
+const CACHE_NAME = "yc-monthly-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -9,7 +9,9 @@ const APP_SHELL = [
   "./js/xlsx.core.min.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/maskable-512.png"
+  "./icons/maskable-512.png",
+  "./icons/apple-touch-icon.png",
+  "./icons/favicon-48.png"
 ];
 
 self.addEventListener("install", (event) => {
