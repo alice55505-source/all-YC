@@ -353,9 +353,9 @@
       name: "青年人",
       cols: ["基數", "主日", "家聚", "出訪", "受訪", "排聚"],
       rows: [
-        ["青職", ["ypBase", "ypSunday", "ypHome", null, null, "ypGroup"]],
-        ["大專", ["csBase", "csSunday", "csHome", null, null, "csGroup"]],
-        ["國高中", ["hsBase", "hsSunday", "hsHome", null, null, "hsGroup"]],
+        ["青職", ["ypBase", "ypSunday", "ypHome", "ypHomeOut", "ypHomeIn", "ypGroup"]],
+        ["大專", ["csBase", "csSunday", "csHome", "csHomeOut", "csHomeIn", "csGroup"]],
+        ["國高中", ["hsBase", "hsSunday", "hsHome", "hsHomeOut", "hsHomeIn", "hsGroup"]],
         ["國中", [null, "jhSunday", "jhHome", "jhHomeOut", "jhHomeIn", "jhGroup"]],
         ["高中", [null, "shSunday", "shHome", "shHomeOut", "shHomeIn", "shGroup"]]
       ]
