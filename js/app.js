@@ -311,6 +311,8 @@
     $("preset-rename-btn").hidden = !p;
     $("preset-delete-btn").hidden = !p;
     $("preset-save-btn").classList.toggle("has-change", dirty);
+    $("preset-new-btn").hidden = !!newBackup;
+    $("preset-undo-btn").hidden = !newBackup;
   }
 
   function renderPresetState() { renderPresetSelect(); }
@@ -363,6 +365,7 @@
     }
   ];
   var pickerTab = 0;
+  var newBackup = null;   // 按 ＋ 之前的設定；有值代表正在新增範本
 
   function tabKeys(tab) {
     if (tab.chips) return tab.chips.map(function (c) { return c[0]; });
@@ -865,6 +868,7 @@
     });
 
     $("preset-select").addEventListener("change", function (e) {
+      newBackup = null;
       var p = findPreset(e.target.value);
       if (p) {
         applyPreset(p);
@@ -875,7 +879,9 @@
       }
     });
     // 新增範本：清空項目、打開挑選面板，從頭挑好後按儲存鈕
+    // ＋ 新增：先記下原本的設定，✕ 可以反悔回去
     $("preset-new-btn").addEventListener("click", function () {
+      newBackup = { preset: settings.preset, fields: settings.fields.slice(), showRatio: settings.showRatio, compare: settings.compare };
       settings.preset = "";
       settings.fields = [];
       saveSettings();
@@ -884,6 +890,18 @@
       setEditMode(true);
       $("field-picker").scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    $("preset-undo-btn").addEventListener("click", function () {
+      if (!newBackup) return;
+      settings.preset = newBackup.preset;
+      settings.fields = newBackup.fields;
+      settings.showRatio = newBackup.showRatio;
+      settings.compare = newBackup.compare;
+      newBackup = null;
+      saveSettings();
+      setEditMode(false);
+      syncControls();
+      renderAll();
+    });
     // 💾：預設帶入目前範本名稱；沿用名稱＝更新該範本，輸入新名稱＝另存新範本
     $("preset-save-btn").addEventListener("click", function () {
       var name = (prompt("範本名稱（沿用＝更新，改名＝另存新範本）", settings.preset || "") || "").trim();
@@ -891,6 +909,7 @@
       var exists = findPreset(name);
       if (exists && !confirm("更新範本「" + name + "」？所有人看到的這個範本都會跟著改。")) return;
       settings.preset = name;
+      newBackup = null;
       saveSettings();
       presetSave(name, presetSnapshot()).then(function () {
         showStatus((exists ? "已更新「" : "已儲存「") + name + "」", "ok");
