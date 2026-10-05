@@ -291,7 +291,7 @@
   function renderPresetSelect() {
     var mine = userPresets();
     if (presetsLoaded && settings.preset && !findPreset(settings.preset)) settings.preset = "";
-    var html = '<option value="">' + (mine.length ? "— 選擇範本 —" : "— 還沒有範本 —") + "</option>";
+    var html = '<option value="">' + (mine.length ? "— 不使用範本（自由設定）—" : "— 還沒有範本 —") + "</option>";
     mine.forEach(function (p) {
       html += '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + "</option>";
     });
@@ -304,6 +304,7 @@
   // 選了範本就鎖定：項目、順序、顯示選項都不能動，要先按「修改範本」；
   // 修改後按「儲存更新」才寫回範本，「取消修改」則還原成範本的設定。
   var editingPreset = false;
+  var lastPreset = "";   // 按「新增範本」之前用的範本，方便取消時回去
 
   function currentPreset() { return settings.preset ? findPreset(settings.preset) : null; }
 
@@ -314,6 +315,12 @@
     if (!p) editingPreset = false;
     var locked = isLocked();
     $("preset-actions").hidden = !p;
+    $("preset-free").hidden = !!p;
+    $("preset-new-btn").hidden = !p;
+    $("preset-saveas-btn").hidden = locked;
+    var back = lastPreset && findPreset(lastPreset);
+    $("preset-back-btn").hidden = !!p || !back;
+    if (back) $("preset-back-btn").textContent = "回到範本「" + lastPreset + "」";
     $("preset-lock").hidden = !locked;
     $("preset-edit-btn").hidden = !locked;
     $("preset-update-btn").hidden = locked;
@@ -890,12 +897,28 @@
         renderPresetState();
       }
     });
+    $("preset-new-btn").addEventListener("click", function () {
+      if (editingPreset && !confirm("目前的修改還沒儲存，要放棄修改並新增範本嗎？")) return;
+      lastPreset = settings.preset;
+      settings.preset = "";
+      editingPreset = false;
+      saveSettings();
+      renderPresetSelect();
+      showStatus("新增範本：以目前的設定為起點，調整項目後按「儲存為新範本」", "ok");
+    });
+    $("preset-back-btn").addEventListener("click", function () {
+      var p = findPreset(lastPreset);
+      if (p) applyPreset(p);
+      renderPresetSelect();
+    });
+    $("preset-saveas-btn").addEventListener("click", function () { $("preset-save-btn").click(); });
     $("preset-save-btn").addEventListener("click", function () {
       var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();
       if (!name) return;
       if (findPreset(name) && !confirm("已有範本「" + name + "」，要覆蓋嗎？")) return;
       settings.preset = name;
       editingPreset = false;
+      lastPreset = "";
       saveSettings();
       presetSave(name, presetSnapshot()).then(function () {
         showStatus("已存成範本「" + name + "」" + (presetsShared ? "（所有人共用）" : "（存在這台裝置）"), "ok");

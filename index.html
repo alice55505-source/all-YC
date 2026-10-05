@@ -55,13 +55,19 @@
         <label for="preset-select">範本</label>
         <div class="inline-row">
           <select id="preset-select"></select>
-          <button class="btn-secondary" id="preset-save-btn" title="把目前的設定存成新範本">存成新範本</button>
+          <button class="btn-secondary" id="preset-new-btn" title="以目前的設定為起點，做一個新範本">＋ 新增範本</button>
+        </div>
+        <div class="preset-actions" id="preset-free" hidden>
+          <span class="preset-dirty">自由設定中：設定好項目後按「儲存為新範本」</span>
+          <button class="btn-primary small-btn" id="preset-save-btn">儲存為新範本</button>
+          <button class="link-btn" id="preset-back-btn" hidden></button>
         </div>
         <div class="preset-actions" id="preset-actions" hidden>
           <span class="preset-lock" id="preset-lock">🔒 範本已鎖定，要改項目請按「修改範本」</span>
           <span class="preset-dirty" id="preset-dirty" hidden>修改中，按「儲存更新」才會存入範本</span>
           <button class="btn-secondary small-btn" id="preset-edit-btn">修改範本</button>
           <button class="btn-primary small-btn" id="preset-update-btn">儲存更新</button>
+          <button class="btn-secondary small-btn" id="preset-saveas-btn">另存新範本</button>
           <button class="btn-secondary small-btn" id="preset-cancel-btn">取消修改</button>
           <button class="link-btn" id="preset-rename-btn">改名</button>
           <button class="link-btn danger" id="preset-delete-btn">刪除</button>
