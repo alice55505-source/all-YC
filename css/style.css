@@ -877,10 +877,6 @@ table.matrix td.na { color: var(--border); }
 
 /* 範本鎖定 */
 .small-btn { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
-.preset-actions button[hidden], .preset-lock[hidden] { display: none; }
-.preset-lock { color: var(--text-muted); }
-#picked-chips.locked .picked-chip { cursor: default; touch-action: auto; padding-right: 0.65rem; }
-#picked-chips.locked .picked-chip button, #picked-chips.locked .drag-handle { display: none; }
+.preset-actions button[hidden] { display: none; }
 #picker-toggle[hidden] { display: none; }
-input[data-setting]:disabled + * , .check:has(input:disabled) { opacity: 0.6; }
 #drag-hint[hidden] { display: none; }
