@@ -70,9 +70,8 @@
   }
 
   function setPresetNote() {
-    $("preset-note").textContent = presetsShared
-      ? "範本存在雲端，所有使用者共用"
-      : "共用範本尚未啟用，範本只存在這台裝置";
+    // 只在特殊狀況（沒有雲端資料庫）提示
+    $("preset-note").textContent = presetsShared ? "" : "共用範本尚未啟用，範本只存在這台裝置";
   }
 
   // 讀取共用範本；這台裝置以前存的範本若雲端沒有，自動上傳後清掉本機的
@@ -403,14 +402,14 @@
         });
         html += "</tr>";
       });
-      html += "</tbody></table></div><p class=\"modal-hint\">點列名或欄名可整列／整欄勾選</p>";
+      html += "</tbody></table></div>";
     }
     $("picker-body").innerHTML = html;
   }
 
   function renderPicked() {
     var fields = selectedFields();
-    $("picked-count").textContent = fields.length ? "已選 " + fields.length + " 項" : "尚未選擇";
+    $("picked-count").textContent = fields.length ? fields.length + " 項" : "";
     $("picked-chips").innerHTML = fields.map(function (f) {
       var label = escapeHtml(f.label);
       return '<span class="picked-chip" data-key="' + f.key + '"><span class="drag-handle" aria-hidden="true">⠿</span>' + label +
@@ -661,7 +660,6 @@
   function renderReport() {
     var built = buildReport();
     $("report-title").textContent = titleMonths() + " 雲嘉眾召會月報表";
-    $("report-badge").textContent = "週平均";
     $("report-sub").textContent = weeksText(built) +
       (cutoff ? "　※ 統計到 " + md(cutoff) + " 主日" : "") +
       (settings.compare && built.missingPrev ? "　※ 前一個月沒有資料的月份無法比較增減" : "");
@@ -880,7 +878,6 @@
       panel.hidden = false;
       $("picker-toggle").textContent = "完成";
       panel.scrollIntoView({ behavior: "smooth", block: "start" });
-      showStatus("新增範本：勾選要的項目，排好順序後按儲存鈕（💾）", "ok");
     });
     $("preset-save-btn").addEventListener("click", function () {
       var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();
@@ -889,7 +886,7 @@
       settings.preset = name;
       saveSettings();
       presetSave(name, presetSnapshot()).then(function () {
-        showStatus("已存成範本「" + name + "」" + (presetsShared ? "（所有人共用）" : "（存在這台裝置）"), "ok");
+        showStatus("已儲存「" + name + "」", "ok");
       }, presetError);
     });
     $("preset-cancel-btn").addEventListener("click", function () {
@@ -900,7 +897,7 @@
       var name = settings.preset;
       if (!confirm("把目前的項目存入範本「" + name + "」？所有人看到的這個範本都會跟著改。")) return;
       presetSave(name, presetSnapshot()).then(function () {
-        showStatus("已更新範本「" + name + "」", "ok");
+        showStatus("已更新「" + name + "」", "ok");
       }, presetError);
     });
     $("preset-rename-btn").addEventListener("click", function () {
