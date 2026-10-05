@@ -845,8 +845,25 @@ table.matrix td.na { color: var(--border); }
 .picked-tools button[hidden] { display: none; }
 
 /* 拖曳排序 */
-.picked-chip { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
-.drag-handle { margin-right: 0.3rem; opacity: 0.45; font-size: 0.8rem; }
+/* 平常唯讀：不顯示 × 與把手 */
+#picked-chips .picked-chip { padding-right: 0.65rem; }
+#picked-chips:not(.editing) .picked-chip button, #picked-chips:not(.editing) .drag-handle { display: none; }
+/* 編輯中：外框包住，只能抓 ⠿ 把手拖曳 */
+#picked-chips.editing {
+  border: 1.5px dashed var(--accent);
+  border-radius: 12px;
+  padding: 0.5rem;
+  background: var(--surface-2);
+}
+#picked-chips.editing .picked-chip { padding-right: 0.3rem; user-select: none; -webkit-user-select: none; }
+.drag-handle {
+  margin: -0.2rem 0.3rem -0.2rem -0.35rem;
+  padding: 0.2rem 0.35rem;
+  opacity: 0.6;
+  font-size: 0.85rem;
+  cursor: grab;
+  touch-action: none;
+}
 .picked-chip.drag-source { opacity: 0.3; }
 .drag-ghost {
   position: fixed;

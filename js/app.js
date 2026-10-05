@@ -739,14 +739,21 @@
     renderReport();
   }
 
-  // ---------- 拖曳排序已選項目（滑鼠、觸控都適用） ----------
+  // 項目平常只顯示；按「編輯項目」才可以勾選、移除、拖曳排序
+  function setEditMode(on) {
+    $("field-picker").hidden = !on;
+    $("picker-toggle").textContent = on ? "完成" : "編輯項目";
+    $("picked-chips").classList.toggle("editing", on);
+  }
+
+  // ---------- 拖曳排序已選項目（只能抓 ⠿ 把手，滑鼠、觸控都適用） ----------
   function bindChipDrag() {
     var box = $("picked-chips");
     var drag = null;
 
     box.addEventListener("pointerdown", function (e) {
       var chip = e.target.closest(".picked-chip");
-      if (!chip || e.target.closest("button") || e.button > 0) return;
+      if (!chip || !e.target.closest(".drag-handle") || e.button > 0 || !box.classList.contains("editing")) return;
       drag = { chip: chip, x: e.clientX, y: e.clientY, started: false, ghost: null, id: e.pointerId };
       chip.setPointerCapture(e.pointerId);
     });
@@ -821,15 +828,13 @@
     });
 
     $("picker-toggle").addEventListener("click", function () {
-      var panel = $("field-picker");
-      panel.hidden = !panel.hidden;
-      $("picker-toggle").textContent = panel.hidden ? "＋ 編輯項目" : "完成";
+      setEditMode($("field-picker").hidden);
     });
     $("picked-chips").addEventListener("click", function (e) {
       var btn = e.target.closest("button");
       if (!btn) return;
       var key = btn.getAttribute("data-remove");
-      if (!key) return;
+      if (!key || !$("picked-chips").classList.contains("editing")) return;
       settings.fields = settings.fields.filter(function (k) { return k !== key; });
       fieldsChanged();
     });
@@ -876,10 +881,8 @@
       saveSettings();
       renderPresetSelect();
       fieldsChanged();
-      var panel = $("field-picker");
-      panel.hidden = false;
-      $("picker-toggle").textContent = "完成";
-      panel.scrollIntoView({ behavior: "smooth", block: "start" });
+      setEditMode(true);
+      $("field-picker").scrollIntoView({ behavior: "smooth", block: "start" });
     });
     // 💾：預設帶入目前範本名稱；沿用名稱＝更新該範本，輸入新名稱＝另存新範本
     $("preset-save-btn").addEventListener("click", function () {
