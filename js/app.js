@@ -304,13 +304,14 @@
 
   function renderPresetState() {
     var p = currentPreset();
-    $("preset-actions").hidden = !p;
-    if (!p) return;
-    var cur = presetSnapshot();
-    var dirty = PRESET_KEYS.some(function (k) { return JSON.stringify(cur[k]) !== JSON.stringify(p[k]); });
-    $("preset-dirty").hidden = !dirty;
-    $("preset-cancel-btn").hidden = !dirty;
-    $("preset-update-btn").hidden = !dirty;
+    $("preset-rename-btn").hidden = !p;
+    $("preset-delete-btn").hidden = !p;
+    var dirty = false;
+    if (p) {
+      var cur = presetSnapshot();
+      dirty = PRESET_KEYS.some(function (k) { return JSON.stringify(cur[k]) !== JSON.stringify(p[k]); });
+    }
+    $("preset-actions").hidden = !dirty;
   }
 
   function applyPreset(p) {
@@ -868,7 +869,7 @@
         renderPresetState();
       }
     });
-    // 新增範本：清空項目、打開挑選面板，從頭挑好後按「儲存新範本」
+    // 新增範本：清空項目、打開挑選面板，從頭挑好後按儲存鈕
     $("preset-new-btn").addEventListener("click", function () {
       settings.preset = "";
       settings.fields = [];
@@ -879,7 +880,7 @@
       panel.hidden = false;
       $("picker-toggle").textContent = "完成";
       panel.scrollIntoView({ behavior: "smooth", block: "start" });
-      showStatus("新增範本：勾選要的項目，排好順序後按「儲存新範本」", "ok");
+      showStatus("新增範本：勾選要的項目，排好順序後按儲存鈕（💾）", "ok");
     });
     $("preset-save-btn").addEventListener("click", function () {
       var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();

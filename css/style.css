@@ -882,3 +882,23 @@ table.matrix td.na { color: var(--border); }
 #drag-hint[hidden] { display: none; }
 .preset-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
 .preset-buttons button { padding: 0.55rem 0.6rem; white-space: nowrap; }
+
+/* 範本列：選單＋圖示按鈕 */
+.preset-row { display: flex; gap: 0.4rem; align-items: center; }
+.preset-row select { flex: 1 1 auto; min-width: 0; }
+.icon-btn {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.icon-btn:hover { color: var(--accent); border-color: var(--accent); }
+.icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
+.icon-btn[hidden] { display: none; }
