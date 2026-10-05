@@ -868,7 +868,7 @@
         renderPresetState();
       }
     });
-    // 新增範本：清空項目、打開挑選面板，從頭挑好後按「存成新範本」
+    // 新增範本：清空項目、打開挑選面板，從頭挑好後按「儲存新範本」
     $("preset-new-btn").addEventListener("click", function () {
       settings.preset = "";
       settings.fields = [];
@@ -879,7 +879,7 @@
       panel.hidden = false;
       $("picker-toggle").textContent = "完成";
       panel.scrollIntoView({ behavior: "smooth", block: "start" });
-      showStatus("新增範本：勾選要的項目，排好順序後按「存成新範本」", "ok");
+      showStatus("新增範本：勾選要的項目，排好順序後按「儲存新範本」", "ok");
     });
     $("preset-save-btn").addEventListener("click", function () {
       var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();

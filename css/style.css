@@ -880,3 +880,5 @@ table.matrix td.na { color: var(--border); }
 .preset-actions button[hidden] { display: none; }
 #picker-toggle[hidden] { display: none; }
 #drag-hint[hidden] { display: none; }
+.preset-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; }
+.preset-buttons button { padding: 0.55rem 0.6rem; white-space: nowrap; }
