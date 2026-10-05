@@ -301,8 +301,8 @@
     renderPresetState();
   }
 
-  // 選了範本就鎖定：項目、順序、顯示選項都不能動，要先按「修改範本」；
-  // 修改後按「儲存更新」才寫回範本，「取消修改」則還原成範本的設定。
+  // 選了範本就鎖定：項目、順序、顯示選項都不能動，要先按「臨時調整」；
+  // 臨時調整只影響目前畫面，按「存入此範本」才寫回範本，「還原範本」則回到範本的設定。
   var editingPreset = false;
   var lastPreset = "";   // 按「新增範本」之前用的範本，方便取消時回去
 
@@ -883,7 +883,7 @@
     });
 
     $("preset-select").addEventListener("change", function (e) {
-      if (editingPreset && !confirm("目前的修改還沒儲存，要放棄修改並切換範本嗎？")) {
+      if (editingPreset && !confirm("臨時調整的項目會還原，確定要切換範本嗎？")) {
         e.target.value = settings.preset;
         return;
       }
@@ -898,7 +898,7 @@
       }
     });
     $("preset-new-btn").addEventListener("click", function () {
-      if (editingPreset && !confirm("目前的修改還沒儲存，要放棄修改並新增範本嗎？")) return;
+      if (editingPreset && !confirm("臨時調整的項目會帶到新範本當起點，繼續嗎？")) return;
       lastPreset = settings.preset;
       settings.preset = "";
       editingPreset = false;
@@ -934,6 +934,7 @@
     });
     $("preset-update-btn").addEventListener("click", function () {
       var name = settings.preset;
+      if (!confirm("把目前的項目存入範本「" + name + "」？所有人看到的這個範本都會跟著改。")) return;
       presetSave(name, presetSnapshot()).then(function () {
         editingPreset = false;
         renderPresetState();
