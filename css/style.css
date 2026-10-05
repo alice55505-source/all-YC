@@ -626,8 +626,8 @@ a { color: var(--accent); }
   .settings-grid { grid-template-columns: 1fr; }
 }
 
-.inline-row { display: flex; gap: 0.5rem; align-items: center; }
-.inline-row select { flex: 1 1 auto; min-width: 0; }
+.inline-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.inline-row select { flex: 1 1 10rem; min-width: 0; }
 .inline-row button { white-space: nowrap; flex-shrink: 0; padding: 0.55rem 0.8rem; }
 
 .field-hint { font-weight: 400; margin-left: 0.4rem; }
