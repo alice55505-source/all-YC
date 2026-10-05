@@ -284,34 +284,36 @@
     return null;
   }
 
+  function currentPreset() { return settings.preset ? findPreset(settings.preset) : null; }
+
+  function presetDirty() {
+    var p = currentPreset();
+    if (!p) return false;
+    var cur = presetSnapshot();
+    return PRESET_KEYS.some(function (k) { return JSON.stringify(cur[k]) !== JSON.stringify(p[k]); });
+  }
+
+  // 選範本 = 套用它的項目；之後照樣可以自由加減，範本本身不會變。
+  // 有調整時選單顯示「＊名稱」，再選一次該範本即還原；按 💾 儲存（沿用名稱＝更新）。
   function renderPresetSelect() {
     var mine = userPresets();
     if (presetsLoaded && settings.preset && !findPreset(settings.preset)) settings.preset = "";
-    var html = '<option value="">' + (mine.length ? "— 選擇範本 —" : "— 還沒有範本 —") + "</option>";
+    var dirty = presetDirty();
+    var first = dirty ? "＊" + settings.preset : (mine.length ? "— 選擇範本 —" : "— 還沒有範本 —");
+    var html = '<option value="">' + escapeHtml(first) + "</option>";
     mine.forEach(function (p) {
       html += '<option value="' + escapeHtml(p.name) + '">' + escapeHtml(p.name) + "</option>";
     });
     var sel = $("preset-select");
     sel.innerHTML = html;
-    sel.value = settings.preset || "";
-    renderPresetState();
-  }
-
-  // 選範本 = 套用它的項目；之後照樣可以自由加減，範本本身不會變，
-  // 要寫回範本才按「更新此範本」，「還原範本」回到範本的設定。
-  function currentPreset() { return settings.preset ? findPreset(settings.preset) : null; }
-
-  function renderPresetState() {
+    sel.value = dirty ? "" : settings.preset || "";
     var p = currentPreset();
     $("preset-rename-btn").hidden = !p;
     $("preset-delete-btn").hidden = !p;
-    var dirty = false;
-    if (p) {
-      var cur = presetSnapshot();
-      dirty = PRESET_KEYS.some(function (k) { return JSON.stringify(cur[k]) !== JSON.stringify(p[k]); });
-    }
-    $("preset-actions").hidden = !dirty;
+    $("preset-save-btn").classList.toggle("has-change", dirty);
   }
+
+  function renderPresetState() { renderPresetSelect(); }
 
   function applyPreset(p) {
     settings.fields = p.fields.filter(function (k) { return FIELD_BY_KEY[k]; });
@@ -864,7 +866,7 @@
       } else {
         settings.preset = "";
         saveSettings();
-        renderPresetState();
+        renderPresetSelect();
       }
     });
     // 新增範本：清空項目、打開挑選面板，從頭挑好後按儲存鈕
@@ -879,25 +881,16 @@
       $("picker-toggle").textContent = "完成";
       panel.scrollIntoView({ behavior: "smooth", block: "start" });
     });
+    // 💾：預設帶入目前範本名稱；沿用名稱＝更新該範本，輸入新名稱＝另存新範本
     $("preset-save-btn").addEventListener("click", function () {
-      var name = (prompt("新範本名稱（例如：兒童組報告）") || "").trim();
+      var name = (prompt("範本名稱（沿用＝更新，改名＝另存新範本）", settings.preset || "") || "").trim();
       if (!name) return;
-      if (findPreset(name) && !confirm("已有範本「" + name + "」，要覆蓋嗎？")) return;
+      var exists = findPreset(name);
+      if (exists && !confirm("更新範本「" + name + "」？所有人看到的這個範本都會跟著改。")) return;
       settings.preset = name;
       saveSettings();
       presetSave(name, presetSnapshot()).then(function () {
-        showStatus("已儲存「" + name + "」", "ok");
-      }, presetError);
-    });
-    $("preset-cancel-btn").addEventListener("click", function () {
-      var p = currentPreset();
-      if (p) applyPreset(p);
-    });
-    $("preset-update-btn").addEventListener("click", function () {
-      var name = settings.preset;
-      if (!confirm("把目前的項目存入範本「" + name + "」？所有人看到的這個範本都會跟著改。")) return;
-      presetSave(name, presetSnapshot()).then(function () {
-        showStatus("已更新「" + name + "」", "ok");
+        showStatus((exists ? "已更新「" : "已儲存「") + name + "」", "ok");
       }, presetError);
     });
     $("preset-rename-btn").addEventListener("click", function () {

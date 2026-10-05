@@ -902,3 +902,5 @@ table.matrix td.na { color: var(--border); }
 .icon-btn:hover { color: var(--accent); border-color: var(--accent); }
 .icon-btn.danger:hover { color: var(--danger); border-color: var(--danger); }
 .icon-btn[hidden] { display: none; }
+.icon-btn.has-change { position: relative; color: var(--accent); border-color: var(--accent); }
+.icon-btn.has-change::after { content: ""; position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
