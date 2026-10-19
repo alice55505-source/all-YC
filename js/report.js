@@ -267,7 +267,8 @@
       if (f.agg === "last") { out[f.key] = vals[vals.length - 1]; return; }
       var sum = 0;
       vals.forEach(function (x) { sum += x; });
-      out[f.key] = sum / vals.length;
+      // 先四捨五入到報表顯示的一位小數，小計／總計才會等於畫面上各列相加
+      out[f.key] = Math.round(sum / vals.length * 10) / 10;
     });
     return { values: out, reported: reported };
   }
